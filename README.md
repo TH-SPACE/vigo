@@ -21,7 +21,7 @@ App em `http://localhost:3392` (porta configurável no `.env`).
 | campo | valor |
 |-------|-------|
 | e-mail | `admin@telefonica.com` |
-| senha  | `5678` (4 últimos dígitos da matrícula `12345678`) |
+
 
 Troca de senha é **obrigatória no 1º login**. A senha inicial de qualquer usuário é
 sempre os **4 últimos dígitos da matrícula**.

@@ -182,7 +182,7 @@ function msgEscalada(o, msAberta) {
     ``,
     ...corpoOcorrencia(o),
     ``,
-    `⚠️ Ocorrência segue ABERTA. Favor atualizar o andamento.`,
+    `⚠️ Ocorrência segue ABERTA.`,
   ].join('\n');
 }
 
