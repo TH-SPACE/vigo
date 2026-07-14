@@ -1,0 +1,90 @@
+<%- include('../partials/head') %>
+<%- include('../partials/topbar') %>
+<% const PERFIS = ['vistoriador','analista','gm','admin']; %>
+
+<main class="container">
+  <div class="pagina-titulo">
+    <img src="/svg/vivo-empresas-predios-purpura-esquerda-320x320.svg" alt="">
+    <h1>Usuários</h1>
+  </div>
+
+  <%- include('../partials/flash') %>
+
+  <div class="detalhe-grid">
+    <div class="bloco">
+      <h2><img src="/svg/vivo-formulario-folha-lapis-purpura-esquerda-320x320.svg" alt="">Novo usuário</h2>
+      <form method="POST" action="/admin/usuarios">
+        <div class="form-grupo"><label>Nome <span class="req">*</span></label><input type="text" name="nome" required></div>
+        <div class="form-grupo"><label>E-mail <span class="req">*</span></label><input type="email" name="email" required></div>
+        <div class="dados">
+          <div class="form-grupo"><label>Matrícula <span class="dica">(senha = 4 últimos dígitos)</span></label><input type="text" name="matricula"></div>
+          <div class="form-grupo"><label>Cluster</label><input type="text" name="cluster" value="GOIANIA"></div>
+        </div>
+        <div class="form-grupo"><label>Perfil</label>
+          <select name="perfil"><% PERFIS.forEach(function(p){ %><option value="<%= p %>"><%= p %></option><% }); %></select>
+        </div>
+        <button class="btn full" type="submit">Cadastrar</button>
+      </form>
+    </div>
+
+    <div class="bloco">
+      <h2><img src="/svg/vivo-tablet-lista-purpura-esquerda-320x320.svg" alt="">Cadastro em massa</h2>
+      <p class="muted" style="font-size:.85rem">Planilha (.xlsx) com colunas: <b>Nome, Email, Matricula, Cluster</b>.</p>
+      <form method="POST" action="/admin/usuarios/massa" enctype="multipart/form-data">
+        <div class="form-grupo"><input type="file" name="planilha" accept=".xlsx,.xls,.csv" required></div>
+        <button class="btn full sec" type="submit">Importar planilha</button>
+      </form>
+    </div>
+  </div>
+
+  <div class="bloco">
+    <h2><img src="/svg/vivo-vivinho-check-purpura-centro-320x320.svg" alt="">Usuários cadastrados (<%= usuarios.length %>)</h2>
+    <% usuarios.forEach(function(u){ %>
+      <div style="border:1px solid var(--linha);border-radius:10px;padding:12px;margin-bottom:10px">
+        <div class="card-topo" style="margin-bottom:6px">
+          <div><b><%= u.nome %></b><br><span class="muted" style="font-size:.85rem"><%= u.email %></span></div>
+          <div class="linha-acoes">
+            <span class="tag status"><%= u.perfil %></span>
+            <span class="tag <%= u.status === 'ativo' ? 'finalizada' : 'cancelada' %>"><%= u.status %></span>
+          </div>
+        </div>
+        <div class="card-info">
+          <span>Matrícula: <b><%= u.matricula || '—' %></b></span>
+          <span>Cluster: <b><%= u.cluster %></b></span>
+          <span>Último acesso: <b><%= u.ultimo_acesso ? fmtData(u.ultimo_acesso) : 'nunca' %></b></span>
+          <% if (u.primeiro_login) { %><span class="tag aviso">troca pendente</span><% } %>
+        </div>
+        <div class="linha-acoes" style="margin-top:8px">
+          <button class="btn sm cinza" type="button" data-toggle="#edit-<%= u.id %>">Editar</button>
+          <form method="POST" action="/admin/usuarios/<%= u.id %>/status">
+            <input type="hidden" name="status" value="<%= u.status === 'ativo' ? 'inativo' : 'ativo' %>">
+            <button class="btn sm sec" type="submit"><%= u.status === 'ativo' ? 'Inativar' : 'Reativar' %></button>
+          </form>
+          <form method="POST" action="/admin/usuarios/<%= u.id %>/resetar"
+                data-confirm="Redefinir a senha de <%= u.nome %> para os 4 últimos dígitos da matrícula?"
+                data-confirm-titulo="Resetar senha" data-confirm-sim="RESETAR" data-confirm-classe="rosa">
+            <button class="btn sm rosa" type="submit">Resetar senha</button>
+          </form>
+        </div>
+
+        <div id="edit-<%= u.id %>" hidden style="margin-top:10px">
+          <form method="POST" action="/admin/usuarios/<%= u.id %>/editar">
+            <div class="dados">
+              <div class="form-grupo"><label>Nome</label><input type="text" name="nome" value="<%= u.nome %>" required></div>
+              <div class="form-grupo"><label>E-mail</label><input type="email" name="email" value="<%= u.email %>" required></div>
+              <div class="form-grupo"><label>Matrícula</label><input type="text" name="matricula" value="<%= u.matricula || '' %>"></div>
+              <div class="form-grupo"><label>Cluster</label><input type="text" name="cluster" value="<%= u.cluster %>"></div>
+            </div>
+            <div class="form-grupo"><label>Perfil</label>
+              <select name="perfil"><% PERFIS.forEach(function(p){ %><option value="<%= p %>" <%= u.perfil === p ? 'selected' : '' %>><%= p %></option><% }); %></select>
+            </div>
+            <button class="btn sm" type="submit">Salvar alterações</button>
+          </form>
+        </div>
+      </div>
+    <% }); %>
+  </div>
+</main>
+
+<%- include('../partials/bottomnav') %>
+<%- include('../partials/foot') %>

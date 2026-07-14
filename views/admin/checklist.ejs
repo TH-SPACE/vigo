@@ -1,0 +1,46 @@
+<%- include('../partials/head') %>
+<%- include('../partials/topbar') %>
+
+<main class="container">
+  <div class="pagina-titulo">
+    <img src="/svg/vivo-chat-duvida-cinza-centro-320x320.svg" alt="">
+    <h1>Checklist</h1>
+  </div>
+  <p class="subtitulo">Soluções Possíveis para Evitar Reincidência</p>
+
+  <%- include('../partials/flash') %>
+
+  <div class="bloco">
+    <h2>Nova pergunta</h2>
+    <form method="POST" action="/admin/checklist">
+      <div class="form-grupo"><input type="text" name="pergunta" placeholder="Texto da pergunta" required></div>
+      <div class="linha-acoes">
+        <label style="display:flex;align-items:center;gap:.3rem"><input type="checkbox" name="obrigatoria" value="1" style="width:auto"> Obrigatória</label>
+        <input type="number" name="ordem" placeholder="Ordem" style="width:90px">
+        <button class="btn" type="submit">Adicionar</button>
+      </div>
+    </form>
+  </div>
+
+  <div class="bloco">
+    <% if (!perguntas.length) { %><p class="muted">Nenhuma pergunta cadastrada.</p><% } %>
+    <% perguntas.forEach(function(p){ %>
+      <div class="linha-acoes" style="padding:.6rem 0;border-bottom:1px solid var(--linha)">
+        <form method="POST" action="/admin/checklist/<%= p.id %>/editar" class="linha-acoes" style="flex:1;min-width:220px">
+          <input type="number" name="ordem" value="<%= p.ordem %>" style="width:70px" title="Ordem">
+          <input type="text" name="pergunta" value="<%= p.pergunta %>" style="flex:1;min-width:160px">
+          <label style="display:flex;align-items:center;gap:.3rem;white-space:nowrap"><input type="checkbox" name="ativo" value="1" style="width:auto" <%= p.ativo ? 'checked' : '' %>> Ativa</label>
+          <label style="display:flex;align-items:center;gap:.3rem;white-space:nowrap"><input type="checkbox" name="obrigatoria" value="1" style="width:auto" <%= p.obrigatoria ? 'checked' : '' %>> Obrig.</label>
+          <button class="btn sm sec" type="submit">Salvar</button>
+        </form>
+        <form method="POST" action="/admin/checklist/<%= p.id %>/excluir"
+              data-confirm="Excluir esta pergunta?" data-confirm-titulo="Excluir pergunta">
+          <button class="btn sm perigo" type="submit">Excluir</button>
+        </form>
+      </div>
+    <% }); %>
+  </div>
+</main>
+
+<%- include('../partials/bottomnav') %>
+<%- include('../partials/foot') %>

@@ -1,0 +1,71 @@
+<%- include('../partials/head') %>
+<%- include('../partials/topbar') %>
+
+<main class="container">
+  <div class="pagina-titulo">
+    <a href="/admin" class="btn sec sm">‹ Admin</a>
+    <h1 style="margin:0">Auditoria</h1>
+  </div>
+
+  <%- include('../partials/flash') %>
+
+  <!-- Retenção / limpeza -->
+  <div class="bloco">
+    <h2><img src="/svg/vivo-vivinho-escudo-purpura-esquerda-320x320.svg" alt="">Retenção dos registros</h2>
+    <p class="muted" style="font-size:.85rem;margin-top:-4px">
+      Os registros são apagados automaticamente após o período definido. Atualmente: <b><%= total %></b> registro(s).
+    </p>
+    <div class="auditoria-cfg">
+      <form method="POST" action="/admin/auditoria/retencao" class="cfg-retencao">
+        <label for="retencao">Apagar registros com mais de</label>
+        <input type="number" id="retencao" name="retencao" min="0" max="365" value="<%= retencao %>" required>
+        <span>dias</span>
+        <button class="btn rosa sm" type="submit">Salvar</button>
+      </form>
+      <form method="POST" action="/admin/auditoria/limpar" style="margin:0"
+            data-confirm="Apagar agora todos os registros com mais de <%= retencao %> dias?"
+            data-confirm-titulo="Limpar auditoria" data-confirm-sim="LIMPAR" data-confirm-classe="cinza">
+        <button class="btn sec sm" type="submit">Limpar agora</button>
+      </form>
+    </div>
+  </div>
+
+  <!-- Filtro -->
+  <form class="barra-busca" method="GET" action="/admin/auditoria">
+    <input type="search" name="busca" value="<%= filtros.busca %>" placeholder="Buscar por usuário, ação ou detalhe...">
+    <select name="acao" onchange="this.form.submit()">
+      <option value="">Todas as ações</option>
+      <% acoes.forEach(function(a){ %>
+        <option value="<%= a %>" <%= filtros.acao === a ? 'selected' : '' %>><%= a %></option>
+      <% }); %>
+    </select>
+    <button class="btn sec" type="submit"><img src="/svg/lupa-320x320.svg" alt="">Filtrar</button>
+  </form>
+
+  <% if (!registros.length) { %>
+    <div class="vazio"><img src="/svg/vivo-vivinho-escudo-purpura-esquerda-320x320.svg" alt=""><p>Nenhum registro de auditoria.</p></div>
+  <% } else { %>
+    <p class="muted"><%= registros.length %> registro(s) exibido(s) (mais recentes primeiro).</p>
+    <div class="tabela-wrap">
+      <table class="tbl">
+        <thead>
+          <tr><th>Data / hora</th><th>Usuário</th><th>Ação</th><th>Detalhe</th><th>IP</th></tr>
+        </thead>
+        <tbody>
+          <% registros.forEach(function(r){ %>
+            <tr>
+              <td class="nowrap"><%= fmtData(r.criado_em) %></td>
+              <td><%= r.usuario_email || '—' %></td>
+              <td><span class="tag status"><%= r.acao %></span></td>
+              <td><%= r.detalhe || '—' %></td>
+              <td class="mono muted"><%= r.ip || '—' %></td>
+            </tr>
+          <% }); %>
+        </tbody>
+      </table>
+    </div>
+  <% } %>
+</main>
+
+<%- include('../partials/bottomnav') %>
+<%- include('../partials/foot') %>

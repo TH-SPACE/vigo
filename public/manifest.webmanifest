@@ -1,0 +1,16 @@
+{
+  "name": "VIGO — Sistema de Vistoria de Ocorrências de Grande Vulto",
+  "short_name": "VIGO",
+  "description": "Resposta a ocorrências de rede de grande afetação — vistoria e correção",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "background_color": "#660099",
+  "theme_color": "#660099",
+  "orientation": "portrait-primary",
+  "icons": [
+    { "src": "/icons/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "/icons/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "/icons/icon-512-maskable.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ]
+}

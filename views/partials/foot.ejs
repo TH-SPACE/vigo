@@ -1,0 +1,22 @@
+  <p class="rodape-resp">Responsável: Thiago Alves Nunes</p>
+
+  <!-- Modal de confirmação -->
+  <div class="modal-bg" id="modalConfirm">
+    <div class="modal">
+      <img class="fig" data-fig src="/svg/vivo-chat-duvida-cinza-centro-320x320.svg" alt="">
+      <h3 data-titulo>Confirmar</h3>
+      <p data-msg></p>
+      <div class="acoes">
+        <button class="btn cinza" data-nao type="button">NÃO</button>
+        <button class="btn rosa" data-sim type="button">SIM</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="/js/app.js?v=<%= assetVer %>"></script>
+  <% if (user) { %>
+  <script>window.VGER_USER={id:<%- user.id %>,perfil:'<%- user.perfil %>'};</script>
+  <script src="/js/notificacoes.js?v=<%= assetVer %>"></script>
+  <% } %>
+</body>
+</html>

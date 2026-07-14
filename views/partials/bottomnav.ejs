@@ -1,0 +1,21 @@
+<%
+  const perfil = user ? user.perfil : null;
+  const isAdmin = perfil === 'admin' || perfil === 'gm';
+  function at(p){ return (path === p || (p !== '/dashboard' && path.indexOf(p) === 0)) ? 'ativo' : ''; }
+%>
+<nav class="bottom-nav">
+  <a href="/painel" class="<%= at('/painel') %>">
+    <img src="/svg/vivo-velocimetro-brilho-rosa-centro-320x320.svg" alt=""><span>Painel</span>
+  </a>
+  <a href="/dashboard" class="<%= at('/dashboard') %>">
+    <img src="/svg/vivo-mapa-purpura-centro-320x320.svg" alt=""><span>Fila</span>
+  </a>
+  <% if (isAdmin) { %>
+    <a href="/admin" class="<%= at('/admin') %>">
+      <img src="/svg/vivo-ferramentas-engrenagem-purpura-centro-320x320.svg" alt=""><span>Admin</span>
+    </a>
+  <% } %>
+  <a href="/perfil" class="<%= at('/perfil') %>">
+    <img src="/svg/vivo-vivinho-check-purpura-centro-320x320.svg" alt=""><span>Perfil</span>
+  </a>
+</nav>

@@ -1,0 +1,45 @@
+<%
+  const perfil = user ? user.perfil : null;
+  const isAdmin = perfil === 'admin' || perfil === 'gm';
+  function ativo(p){ return (path === p || (p !== '/dashboard' && path.indexOf(p) === 0)) ? 'ativo' : ''; }
+%>
+<header class="topbar">
+  <a class="marca" href="/dashboard">
+    <span class="bolha"><img src="/svg/vivo-aura-purpura-centro-320x320.svg" alt=""></span>
+    <span class="marca-nome">VIGO<span class="marca-sub"> · Vistoria de Ocorrências de Grande Vulto</span></span>
+  </a>
+  <span class="cresce"></span>
+
+  <nav class="nav-desktop">
+    <a href="/painel" class="<%= ativo('/painel') %>">Painel</a>
+    <a href="/dashboard" class="<%= ativo('/dashboard') %>">Fila</a>
+    <a href="/analytics" class="<%= ativo('/analytics') %>">Analytics</a>
+    <% if (isAdmin) { %>
+      <a href="/admin" class="<%= ativo('/admin') %>">Admin</a>
+    <% } %>
+  </nav>
+
+  <div class="usuario">
+    <% if (user) { %>
+    <div class="notif-wrap" id="notif-wrap">
+      <button class="notif-btn" id="notif-btn" type="button" title="Notificações" aria-label="Notificações">
+        <svg xmlns="http://www.w3.org/2000/svg" width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
+        <span class="notif-badge" id="notif-badge" hidden>0</span>
+      </button>
+      <div class="sino-pop notif-pop" id="notif-pop" hidden>
+        <div class="sino-pop-cab" id="notif-pop-titulo">Notificações</div>
+        <div id="notif-pop-corpo"><div class="sino-vazio">Carregando...</div></div>
+        <a class="sino-todas" href="/dashboard">Ver fila completa ›</a>
+      </div>
+    </div>
+    <% } %>
+    <button class="tema-btn" type="button" data-tema-toggle aria-label="Alternar tema claro/escuro" title="Tema claro/escuro" data-dica="Alternar entre tema claro e escuro">
+      <span class="ic-lua">🌙</span><span class="ic-sol">☀️</span>
+    </button>
+    <a class="perfil-link" href="/perfil" title="Meu perfil" data-dica="Meu perfil e configurações">
+      <span class="avatar"><%= user ? user.nome.trim().charAt(0).toUpperCase() : '?' %></span>
+      <span class="perfil-nome"><%= user ? user.nome : '' %></span>
+    </a>
+    <form class="sair-form" action="/logout" method="post"><button type="submit" class="sair">Sair</button></form>
+  </div>
+</header>

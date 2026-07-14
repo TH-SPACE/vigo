@@ -1,0 +1,88 @@
+<%- include('../partials/head') %>
+<%- include('../partials/topbar') %>
+
+<main class="container">
+  <div class="pagina-titulo">
+    <img src="/svg/vivo-notebook-engrenagens-purpura-centro-320x320.svg" alt="">
+    <h1>Configuração de Importação</h1>
+  </div>
+
+  <%- include('../partials/flash') %>
+
+  <div class="bloco">
+    <div class="card-info" style="flex-wrap:wrap;gap:6px">
+      <span>Ocorrências: <b><%= cfg.ultima_importacao ? fmtData(cfg.ultima_importacao) : 'nunca' %></b></span>
+      <span>Observações: <b><%= cfg.ultima_importacao_observacoes ? fmtData(cfg.ultima_importacao_observacoes) : 'nunca' %></b></span>
+    </div>
+    <% if (cfg.ultima_importacao_resultado) { %><p class="muted"><%= cfg.ultima_importacao_resultado %></p><% } %>
+    <% if (cfg.ultima_importacao_observacoes_resultado) { %><p class="muted"><%= cfg.ultima_importacao_observacoes_resultado %></p><% } %>
+    <div style="display:flex;gap:.75rem;flex-wrap:wrap;align-items:center">
+      <form method="POST" action="/admin/config/importar">
+        <button class="btn rosa" type="submit"><img src="/svg/vivo-foguete-diagonal-rosa-centro-320x320.svg" alt="">Importar ocorrências agora</button>
+      </form>
+      <form method="POST" action="/admin/config/importar-observacoes">
+        <button class="btn" type="submit"><img src="/svg/vivo-chat-duvida-cinza-centro-320x320.svg" alt="">Importar observações agora</button>
+      </form>
+    </div>
+  </div>
+
+  <form method="POST" action="/admin/config">
+    <div class="bloco">
+      <h2><img src="/svg/vivo-site-cinza-centro-320x320.svg" alt="">Origem e agendamento</h2>
+      <div class="form-grupo">
+        <label>URL da base de ocorrências (TBL_OCORRENCIA.TXT)</label>
+        <input type="text" name="import_url" value="<%= cfg.import_url || '' %>">
+      </div>
+      <div class="form-grupo">
+        <label>URL das observações (TBL_OBSERVACAO.TXT)</label>
+        <input type="text" name="import_observacoes_url" value="<%= cfg.import_observacoes_url || '' %>">
+      </div>
+      <div class="dados">
+        <div class="form-grupo"><label>Intervalo mínimo (min)</label><input type="number" name="intervalo_minimo" value="<%= cfg.intervalo_minimo || 10 %>" min="1"></div>
+        <div class="form-grupo"><label>Intervalo máximo (min)</label><input type="number" name="intervalo_maximo" value="<%= cfg.intervalo_maximo || 25 %>" min="1"></div>
+      </div>
+      <div style="display:flex;gap:1.5rem;flex-wrap:wrap">
+        <div class="form-grupo" style="margin:0">
+          <label style="display:flex;align-items:center;gap:.5rem">
+            <input type="checkbox" name="import_ativo" value="1" style="width:auto" <%= String(cfg.import_ativo) === '1' ? 'checked' : '' %>>
+            Importar ocorrências automaticamente
+          </label>
+        </div>
+        <div class="form-grupo" style="margin:0">
+          <label style="display:flex;align-items:center;gap:.5rem">
+            <input type="checkbox" name="import_observacoes_ativo" value="1" style="width:auto" <%= String(cfg.import_observacoes_ativo) === '1' ? 'checked' : '' %>>
+            Importar observações automaticamente
+          </label>
+        </div>
+      </div>
+    </div>
+
+    <div class="bloco">
+      <h2><img src="/svg/vivo-velocimetro-brilho-rosa-centro-320x320.svg" alt="">Critérios de importação</h2>
+      <div class="form-grupo"><label>Afetação mínima (importa quando maior ou igual a)</label><input type="number" name="afetacao_minima" value="<%= cfg.afetacao_minima || 300 %>"></div>
+      <div class="form-grupo">
+        <label>Data mínima de abertura <span class="dica">(exibe na fila apenas ocorrências abertas a partir desta data; vazio = sem limite)</span></label>
+        <input type="date" name="data_minima_ocorrencia" value="<%= cfg.data_minima_ocorrencia || '' %>">
+      </div>
+      <div class="form-grupo"><label>Empresas permitidas <span class="dica">(separe por vírgula; vazio = todas)</span></label><input type="text" name="empresas_permitidas" value="<%= cfg.empresas_permitidas || '' %>"></div>
+      <div class="form-grupo"><label>Clusters permitidos <span class="dica">(separe por vírgula; vazio = todos)</span></label><input type="text" name="clusters_permitidos" value="<%= cfg.clusters_permitidos || '' %>"></div>
+      <div class="form-grupo"><label>Status permitidos <span class="dica">(ex.: ABERTO,FECHADO)</span></label><input type="text" name="status_permitidos" value="<%= cfg.status_permitidos || '' %>"></div>
+    </div>
+
+    <div class="bloco">
+      <h2><img src="/svg/vivo-vivinho-escudo-purpura-esquerda-320x320.svg" alt="">Acesso</h2>
+      <div class="form-grupo">
+        <label style="display:flex;align-items:center;gap:.5rem">
+          <input type="checkbox" name="autocadastro_ativo" value="1" style="width:auto" <%= String(cfg.autocadastro_ativo === undefined ? '1' : cfg.autocadastro_ativo) === '1' ? 'checked' : '' %>>
+          Permitir autocadastro na tela de login
+        </label>
+        <p class="muted" style="font-size:.8rem;margin-top:4px">Quando ligado, novos usuários podem criar a própria conta para testar o sistema.</p>
+      </div>
+    </div>
+
+    <button class="btn full" type="submit">Salvar configurações</button>
+  </form>
+</main>
+
+<%- include('../partials/bottomnav') %>
+<%- include('../partials/foot') %>

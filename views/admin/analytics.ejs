@@ -1,0 +1,172 @@
+<%- include('../partials/head') %>
+<%- include('../partials/topbar') %>
+
+<main class="container">
+  <div class="pagina-titulo">
+    <img src="/svg/vivo-velocimetro-brilho-rosa-centro-320x320.svg" alt="">
+    <h1>Analytics</h1>
+    <a href="/analytics/exportar" class="btn rosa sm" style="margin-left:auto">
+      ⬇ Exportar Excel
+    </a>
+  </div>
+
+  <%- include('../partials/flash') %>
+
+  <%
+    const t = dados.totais || {};
+    const fmtN = v => Number(v||0).toLocaleString('pt-BR');
+    const fmtD = v => Math.round(Number(v||0)).toLocaleString('pt-BR');
+  %>
+
+  <!-- KPIs -->
+  <div class="dados" style="margin-bottom:20px">
+    <div class="card-kpi"><span class="kpi-val"><%= fmtN(t.total) %></span><span class="kpi-lbl">Ocorrências na base</span></div>
+    <div class="card-kpi"><span class="kpi-val"><%= fmtN(t.afetacao_total) %></span><span class="kpi-lbl">Afetação total</span></div>
+    <div class="card-kpi"><span class="kpi-val"><%= fmtD(t.afetacao_media) %></span><span class="kpi-lbl">Afetação média</span></div>
+    <div class="card-kpi" style="color:var(--erro)"><span class="kpi-val"><%= fmtN(t.afetacao_max) %></span><span class="kpi-lbl">Maior afetação</span></div>
+  </div>
+
+  <!-- Status + Entradas por dia -->
+  <div class="dados" style="margin-bottom:20px;align-items:stretch">
+    <div class="bloco" style="flex:1;min-width:220px">
+      <h2>Status atual</h2>
+      <div style="max-width:280px;margin:0 auto"><canvas id="chartStatus"></canvas></div>
+    </div>
+    <div class="bloco" style="flex:3;min-width:280px">
+      <h2>Entradas por dia (últimos 30 dias)</h2>
+      <canvas id="chartDia" style="max-height:220px"></canvas>
+    </div>
+  </div>
+
+  <!-- Por cluster + por causa -->
+  <div class="dados" style="margin-bottom:20px;align-items:stretch">
+    <div class="bloco" style="flex:1;min-width:260px">
+      <h2>Por cluster (top 15)</h2>
+      <canvas id="chartCluster" style="max-height:320px"></canvas>
+    </div>
+    <div class="bloco" style="flex:1;min-width:260px">
+      <h2>Por causa (top 10)</h2>
+      <canvas id="chartCausa" style="max-height:320px"></canvas>
+    </div>
+  </div>
+
+  <!-- Produção por vistoriador -->
+  <% if (dados.porVistoriador && dados.porVistoriador.length) { %>
+  <div class="bloco" style="margin-bottom:20px">
+    <h2>Produção por vistoriador</h2>
+    <canvas id="chartVist" style="max-height:220px"></canvas>
+  </div>
+  <% } %>
+</main>
+
+<style>
+.card-kpi{background:var(--card);border:1px solid var(--borda);border-radius:10px;padding:16px 20px;display:flex;flex-direction:column;align-items:flex-start;gap:4px;flex:1;min-width:120px}
+.kpi-val{font-size:1.6rem;font-weight:800;line-height:1;color:var(--purpura)}
+.kpi-lbl{font-size:.72rem;color:var(--cinza);text-transform:uppercase;letter-spacing:.05em}
+</style>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js"></script>
+<script>
+(function(){
+  const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
+  const gridColor  = isDark ? 'rgba(255,255,255,.08)' : 'rgba(0,0,0,.07)';
+  const tickColor  = isDark ? '#aaa' : '#666';
+  const CORES = ['#660099','#e4007c','#f4a100','#00bcd4','#4caf50','#ff5722','#9c27b0','#3f51b5','#009688','#ff9800'];
+
+  Chart.defaults.font.family = 'system-ui,sans-serif';
+  Chart.defaults.font.size   = 12;
+  Chart.defaults.color       = tickColor;
+
+  /* ── Status ─────────────────────────────────────────── */
+  const statusData = <%- JSON.stringify(dados.porStatus) %>;
+  const STATUS_CORES = {
+    'PENDENTE': '#e4007c',
+    'VISTORIA SUPERVISOR': '#660099',
+    'AGUARDANDO CORRECAO': '#f4a100',
+    'CORRECAO ENVIADA': '#4caf50',
+    'CANCELADA': '#9e9e9e',
+  };
+  new Chart(document.getElementById('chartStatus'), {
+    type: 'doughnut',
+    data: {
+      labels: statusData.map(r => r.status_tratativa),
+      datasets: [{ data: statusData.map(r => Number(r.total)),
+        backgroundColor: statusData.map(r => STATUS_CORES[r.status_tratativa] || '#ccc'),
+        borderWidth: 2, borderColor: isDark ? '#1a1a2e' : '#fff' }]
+    },
+    options: { plugins: { legend: { position: 'bottom', labels: { boxWidth: 12, padding: 10 } } } }
+  });
+
+  /* ── Entradas por dia ───────────────────────────────── */
+  const diaData = <%- JSON.stringify(dados.porDia) %>;
+  new Chart(document.getElementById('chartDia'), {
+    type: 'line',
+    data: {
+      labels: diaData.map(r => r.dia),
+      datasets: [{ label: 'Ocorrências', data: diaData.map(r => Number(r.total)),
+        borderColor: '#660099', backgroundColor: 'rgba(102,0,153,.15)',
+        fill: true, tension: .3, pointRadius: 3 }]
+    },
+    options: {
+      scales: { x: { grid: { color: gridColor }, ticks: { color: tickColor, maxTicksLimit: 10 } },
+                y: { grid: { color: gridColor }, ticks: { color: tickColor }, beginAtZero: true } },
+      plugins: { legend: { display: false } }
+    }
+  });
+
+  /* ── Por cluster ────────────────────────────────────── */
+  const clusterData = <%- JSON.stringify(dados.porCluster) %>;
+  new Chart(document.getElementById('chartCluster'), {
+    type: 'bar',
+    data: {
+      labels: clusterData.map(r => r.cluster),
+      datasets: [{ label: 'Ocorrências', data: clusterData.map(r => Number(r.total)),
+        backgroundColor: '#660099cc', borderRadius: 4 }]
+    },
+    options: {
+      indexAxis: 'y',
+      scales: { x: { grid: { color: gridColor }, ticks: { color: tickColor }, beginAtZero: true },
+                y: { grid: { display: false }, ticks: { color: tickColor } } },
+      plugins: { legend: { display: false } }
+    }
+  });
+
+  /* ── Por causa ──────────────────────────────────────── */
+  const causaData = <%- JSON.stringify(dados.porCausa) %>;
+  new Chart(document.getElementById('chartCausa'), {
+    type: 'bar',
+    data: {
+      labels: causaData.map(r => r.causa),
+      datasets: [{ label: 'Ocorrências', data: causaData.map(r => Number(r.total)),
+        backgroundColor: '#e4007ccc', borderRadius: 4 }]
+    },
+    options: {
+      indexAxis: 'y',
+      scales: { x: { grid: { color: gridColor }, ticks: { color: tickColor }, beginAtZero: true },
+                y: { grid: { display: false }, ticks: { color: tickColor } } },
+      plugins: { legend: { display: false } }
+    }
+  });
+
+  /* ── Produção por vistoriador ───────────────────────── */
+  const vistData = <%- JSON.stringify(dados.porVistoriador) %>;
+  if (vistData.length) {
+    new Chart(document.getElementById('chartVist'), {
+      type: 'bar',
+      data: {
+        labels: vistData.map(r => r.nome),
+        datasets: [{ label: 'Ocorrências vistoriadas', data: vistData.map(r => Number(r.total)),
+          backgroundColor: vistData.map((_, i) => CORES[i % CORES.length] + 'cc'), borderRadius: 4 }]
+      },
+      options: {
+        scales: { x: { grid: { display: false }, ticks: { color: tickColor } },
+                  y: { grid: { color: gridColor }, ticks: { color: tickColor }, beginAtZero: true } },
+        plugins: { legend: { display: false } }
+      }
+    });
+  }
+})();
+</script>
+
+<%- include('../partials/bottomnav') %>
+<%- include('../partials/foot') %>

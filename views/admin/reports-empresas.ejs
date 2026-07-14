@@ -1,0 +1,259 @@
+<%- include('../partials/head') %>
+<%- include('../partials/topbar') %>
+
+<main class="container">
+  <div class="pagina-titulo">
+    <img src="/svg/vivo-empresas-predios-purpura-esquerda-320x320.svg" alt="">
+    <h1>Reports por Empresa</h1>
+  </div>
+
+  <%- include('../partials/flash') %>
+
+  <!-- ── STATUS ── -->
+  <div class="bloco">
+    <div class="card-info" style="flex-wrap:wrap;gap:6px">
+      <span>Base: <b><%= Number(totalBase).toLocaleString('pt-BR') %></b></span>
+      <span>Última importação: <b><%= cfg.rep_ultima_importacao ? fmtData(cfg.rep_ultima_importacao) : 'nunca' %></b></span>
+      <span>Módulo: <b style="color:<%= String(cfg.rep_ativo)==='1' ? '#16a34a' : '#dc2626' %>">
+        <%= String(cfg.rep_ativo)==='1' ? 'LIGADO' : 'DESLIGADO' %></b></span>
+    </div>
+
+    <% if (pendentes > 0) { %>
+      <p class="muted" style="font-size:.82rem;color:#b45309">
+        ⚠️ <b><%= Number(pendentes).toLocaleString('pt-BR') %></b> ocorrência(s) ainda não avisadas —
+        se o envio estiver ligado, elas viram mensagem. Use <b>Silenciar</b> para zerar.
+      </p>
+    <% } %>
+
+    <div style="display:flex;gap:.75rem;flex-wrap:wrap;align-items:center">
+      <form method="POST" action="/admin/reports-empresas/importar">
+        <button class="btn rosa" type="submit">
+          <img src="/svg/vivo-foguete-diagonal-rosa-centro-320x320.svg" alt="">Importar agora
+        </button>
+      </form>
+      <form method="POST" action="/admin/reports-empresas/silenciar"
+            onsubmit="return confirm('Marcar as <%= pendentes %> ocorrência(s) atuais como já avisadas?')">
+        <button class="btn" type="submit" <%= pendentes > 0 ? '' : 'disabled' %>>🔕 Silenciar base atual</button>
+      </form>
+    </div>
+  </div>
+
+  <form method="POST" action="/admin/reports-empresas">
+
+    <!-- ── ENVIO ── -->
+    <div class="bloco">
+      <h2><img src="/svg/vivo-smartphone-app-vivo-320x320.svg" alt="">Envio</h2>
+
+      <div class="form-grupo">
+        <label style="display:flex;align-items:center;gap:.5rem">
+          <input type="checkbox" name="rep_ativo" value="1" style="width:auto"
+            <%= String(cfg.rep_ativo) === '1' ? 'checked' : '' %>>
+          <b>Módulo ligado</b>
+        </label>
+        <p class="muted" style="font-size:.78rem;margin-top:2px">Chave geral: importa a base e envia. Não afeta o VIGO.</p>
+      </div>
+
+      <div class="form-grupo">
+        <label style="display:flex;align-items:center;gap:.5rem">
+          <input type="checkbox" name="rep_notificacao_ativa" value="1" style="width:auto"
+            <%= String(cfg.rep_notificacao_ativa ?? '1') === '1' ? 'checked' : '' %>>
+          Avisar <b>nova ocorrência</b>
+        </label>
+        <p class="muted" style="font-size:.78rem;margin-top:2px">Uma mensagem por ocorrência, assim que ela entra.</p>
+      </div>
+
+      <div class="form-grupo">
+        <label style="display:flex;align-items:center;gap:.5rem">
+          <input type="checkbox" name="rep_escalada_ativa" value="1" style="width:auto"
+            <%= String(cfg.rep_escalada_ativa ?? '1') === '1' ? 'checked' : '' %>>
+          Cobrar <b>ocorrência parada</b>
+        </label>
+        <p class="muted" style="font-size:.78rem;margin-top:2px">Cobra no grupo enquanto continuar ABERTA (ver Escalada abaixo).</p>
+      </div>
+
+      <p class="muted" style="font-size:.8rem;background:#f8fafc;padding:.6rem;border-radius:6px;margin:0">
+        📌 <b>Só é avisado o que entrar com o envio ligado.</b> O que entrar desligado
+        (ou sem o grupo cadastrado) é descartado e <b>não</b> é enviado depois. Assim nenhum grupo
+        recebe enxurrada de mensagem atrasada.
+      </p>
+    </div>
+
+    <!-- ── EMPRESAS ── -->
+    <div class="bloco">
+      <h2><img src="/svg/vivo-empresas-predios-purpura-esquerda-320x320.svg" alt="">Empresas e grupos</h2>
+      <p class="muted" style="font-size:.78rem;margin-top:-4px;margin-bottom:10px">
+        Cada empresa envia para o seu grupo, cadastrado no dashboard do reportb2b.
+      </p>
+
+      <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:.75rem">
+        <% empresas.forEach(function(e){ %>
+          <div style="border:1px solid var(--borda,#e5e7eb);border-radius:10px;padding:.75rem">
+            <label style="display:flex;align-items:center;gap:.5rem;font-weight:600">
+              <input type="checkbox" name="empresas_ativas" value="<%= e.slug %>" style="width:auto"
+                <%= e.ativo ? 'checked' : '' %>>
+              <%= e.nome %>
+            </label>
+            <p class="muted" style="font-size:.78rem;margin:.4rem 0 .5rem">
+              <b style="color:var(--erro)"><%= e.abertas %></b> aberta<%= e.abertas === 1 ? '' : 's' %>
+              · <%= Number(e.total).toLocaleString('pt-BR') %> na base<br>
+              <span style="font-size:.72rem">grupo: <code><%= e.target %></code></span>
+            </p>
+            <button class="btn sm" type="submit"
+                    formaction="/admin/reports-empresas/testar/<%= encodeURIComponent(e.nome) %>"
+                    formmethod="POST" formnovalidate
+                    style="background:#25D366;color:#fff">Enviar teste</button>
+          </div>
+        <% }) %>
+      </div>
+      <% if (!empresas.length) { %>
+        <p class="muted">Nenhuma empresa configurada. Preencha "Empresas" abaixo.</p>
+      <% } %>
+    </div>
+
+    <!-- ── ESCALADA ── -->
+    <div class="bloco">
+      <h2><img src="/svg/vivo-velocimetro-brilho-rosa-centro-320x320.svg" alt="">Escalada</h2>
+      <p class="muted" style="font-size:.78rem;margin-top:-4px;margin-bottom:10px">
+        Cada faixa liga e desliga sozinha. Marque só a de 24h para cobrar apenas o que
+        estiver aberto há 24h ou mais — o que estiver aberto há menos disso é ignorado.
+      </p>
+
+      <% const f1Ativa = String(cfg.rep_escalada_faixa1_ativa ?? '1') === '1';
+         const f2Ativa = String(cfg.rep_escalada_faixa2_ativa ?? '1') === '1'; %>
+
+      <div class="faixa" style="border:1px solid var(--borda,#e5e7eb);border-radius:10px;padding:.75rem;margin-bottom:.6rem<%= f1Ativa ? '' : ';opacity:.5' %>">
+        <label style="display:flex;align-items:center;gap:.5rem;font-weight:600">
+          <input type="checkbox" name="rep_escalada_faixa1_ativa" value="1" style="width:auto"
+            <%= f1Ativa ? 'checked' : '' %>>
+          1ª faixa
+        </label>
+        <div class="dados" style="margin-top:.5rem">
+          <div class="form-grupo">
+            <label>Parada há mais de (h)</label>
+            <input type="number" name="rep_escalada_faixa1_horas" min="1" max="720"
+                   value="<%= cfg.rep_escalada_faixa1_horas || 12 %>">
+          </div>
+          <div class="form-grupo">
+            <label>cobrar a cada (h)</label>
+            <input type="number" name="rep_escalada_faixa1_intervalo" min="1" max="72"
+                   value="<%= cfg.rep_escalada_faixa1_intervalo || 2 %>">
+          </div>
+        </div>
+      </div>
+
+      <div class="faixa" style="border:1px solid var(--borda,#e5e7eb);border-radius:10px;padding:.75rem<%= f2Ativa ? '' : ';opacity:.5' %>">
+        <label style="display:flex;align-items:center;gap:.5rem;font-weight:600">
+          <input type="checkbox" name="rep_escalada_faixa2_ativa" value="1" style="width:auto"
+            <%= f2Ativa ? 'checked' : '' %>>
+          2ª faixa
+        </label>
+        <div class="dados" style="margin-top:.5rem">
+          <div class="form-grupo">
+            <label>Parada há mais de (h)</label>
+            <input type="number" name="rep_escalada_faixa2_horas" min="1" max="720"
+                   value="<%= cfg.rep_escalada_faixa2_horas || 24 %>">
+          </div>
+          <div class="form-grupo">
+            <label>cobrar a cada (h)</label>
+            <input type="number" name="rep_escalada_faixa2_intervalo" min="1" max="72"
+                   value="<%= cfg.rep_escalada_faixa2_intervalo || 1 %>">
+          </div>
+        </div>
+      </div>
+
+      <p class="muted" id="escalada-vazia" style="font-size:.8rem;color:#b45309;margin:.6rem 0 0<%= (f1Ativa || f2Ativa) ? ';display:none' : '' %>">
+        ⚠️ Nenhuma faixa marcada: com a escalada ligada, nada será cobrado.
+      </p>
+
+      <script>
+        (function () {
+          const faixas = [...document.querySelectorAll('.faixa')];
+          const aviso  = document.getElementById('escalada-vazia');
+          function pintar() {
+            let alguma = false;
+            for (const f of faixas) {
+              const on = f.querySelector('input[type=checkbox]').checked;
+              f.style.opacity = on ? '' : '.5';
+              if (on) alguma = true;
+            }
+            aviso.style.display = alguma ? 'none' : '';
+          }
+          for (const f of faixas) {
+            f.querySelector('input[type=checkbox]').addEventListener('change', pintar);
+          }
+        })();
+      </script>
+
+      <div class="form-grupo">
+        <label>Dias <span class="dica">(cobra o dia inteiro, inclusive de madrugada)</span></label>
+        <div style="display:flex;gap:.6rem;flex-wrap:wrap;margin-top:4px">
+          <% const diasAtivos = String(cfg.rep_escalada_dias || '0,1,2,3,4,5,6').split(',').map(d => d.trim());
+             const nomeDias = ['Dom','Seg','Ter','Qua','Qui','Sex','Sáb'];
+             for (let i = 0; i < 7; i++) { %>
+            <label style="display:flex;align-items:center;gap:3px;font-size:.85rem;cursor:pointer">
+              <input type="checkbox" name="rep_escalada_dias" value="<%= i %>" style="width:auto"
+                <%= diasAtivos.includes(String(i)) ? 'checked' : '' %>>
+              <%= nomeDias[i] %>
+            </label>
+          <% } %>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── O QUE ENTRA NA BASE ── -->
+    <div class="bloco">
+      <h2><img src="/svg/lupa-320x320.svg" alt="">O que entra na base</h2>
+
+      <div class="form-grupo">
+        <label>Data de corte <span class="dica">(vazio = tudo)</span></label>
+        <input type="date" name="rep_data_minima" value="<%= cfg.rep_data_minima || '' %>" style="max-width:200px">
+        <p class="muted" style="font-size:.75rem;margin-top:3px">Ocorrência mais antiga que isso não entra nem é avisada.</p>
+      </div>
+      <div class="form-grupo">
+        <label>Empresas <span class="dica">(uma por grupo, separadas por vírgula)</span></label>
+        <input type="text" name="rep_empresas" value="<%= cfg.rep_empresas || '' %>">
+      </div>
+      <div class="form-grupo">
+        <label>Clusters <span class="dica">(vazio = todos)</span></label>
+        <input type="text" name="rep_clusters_permitidos" value="<%= cfg.rep_clusters_permitidos || '' %>">
+      </div>
+      <div class="form-grupo">
+        <% const perm = String(cfg.rep_status_permitidos || '').split(',').map(s => s.trim().toUpperCase()).filter(Boolean);
+           const notif = perm.length ? ['ABERTO','FECHADO'].filter(s => perm.includes(s)) : ['ABERTO','FECHADO']; %>
+        <label>Status <span class="dica">(vazio = todos)</span></label>
+        <input type="text" name="rep_status_permitidos" value="<%= cfg.rep_status_permitidos || '' %>">
+        <p class="muted" style="font-size:.75rem;margin-top:3px">
+          Também define o que vira mensagem. Hoje avisa: <b><%= notif.length ? notif.join(' e ') : 'nada' %></b>.
+        </p>
+      </div>
+      <div class="form-grupo">
+        <label>Afetação mínima <span class="dica">(0 = sem corte)</span></label>
+        <input type="number" name="rep_afetacao_minima" min="0" value="<%= cfg.rep_afetacao_minima || 0 %>" style="max-width:200px">
+      </div>
+    </div>
+
+    <!-- ── ORIGEM ── -->
+    <div class="bloco">
+      <h2><img src="/svg/vivo-site-cinza-centro-320x320.svg" alt="">Origem</h2>
+      <div class="form-grupo">
+        <label>URL da base (TBL_OCORRENCIA.TXT)</label>
+        <input type="text" name="rep_import_url" value="<%= cfg.rep_import_url || '' %>">
+      </div>
+      <div class="dados">
+        <div class="form-grupo">
+          <label>Importar a cada, no mínimo (min)</label>
+          <input type="number" name="rep_intervalo_minimo" min="1" value="<%= cfg.rep_intervalo_minimo || 10 %>">
+        </div>
+        <div class="form-grupo">
+          <label>no máximo (min)</label>
+          <input type="number" name="rep_intervalo_maximo" min="1" value="<%= cfg.rep_intervalo_maximo || 20 %>">
+        </div>
+      </div>
+    </div>
+
+    <button class="btn full" type="submit">Salvar configurações</button>
+  </form>
+</main>
+
+<%- include('../partials/bottomnav') %>
+<%- include('../partials/foot') %>

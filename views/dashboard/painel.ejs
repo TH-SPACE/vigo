@@ -1,0 +1,83 @@
+<%- include('../partials/head') %>
+<%- include('../partials/topbar') %>
+<% const ordem = ['PENDENTE','VISTORIA SUPERVISOR','AGUARDANDO CORRECAO','CORRECAO ENVIADA','CANCELADA']; %>
+
+<main class="container">
+  <div class="painel-cab">
+    <div class="pagina-titulo" style="margin:0">
+      <img src="/svg/vivo-velocimetro-brilho-rosa-centro-320x320.svg" alt="">
+      <h1><%= titulo %></h1>
+    </div>
+    <div class="painel-cab-dir">
+      <span class="ao-vivo" <% if (ultimaImportacao) { %>data-sync="<%= ultimaImportacao %>"<% } %>>
+        <span class="ponto"></span> Ao vivo · sincronizado <b id="sync-label">—</b>
+      </span>
+    </div>
+  </div>
+
+  <%- include('../partials/flash') %>
+
+  <!-- KPIs -->
+  <section class="kpis">
+    <a class="kpi alerta" href="/dashboard?status=ABERTO">
+      <div class="kpi-top"><span>Ocorrências em Aberto</span><img src="/svg/vivo-velocimetro-brilho-rosa-centro-320x320.svg" alt=""></div>
+      <div class="kpi-val" data-kpi="abertas"><%= metricas.abertas %></div>
+      <div class="kpi-sub">clientes ainda sem internet</div>
+    </a>
+    <a class="kpi sucesso" href="/dashboard?status=FECHADO">
+      <div class="kpi-top"><span>Ocorrências Fechadas</span><img src="/svg/vivo-vivinho-check-purpura-centro-320x320.svg" alt=""></div>
+      <div class="kpi-val" data-kpi="fechadas"><%= metricas.fechadas %></div>
+      <div class="kpi-sub">status FECHADO na base</div>
+    </a>
+    <a class="kpi" href="/dashboard?status_tratativa=PENDENTE">
+      <div class="kpi-top"><span>Pendente Vistoria</span><img src="/svg/vivo-homem-ferramentas-320x320.svg" alt=""></div>
+      <div class="kpi-val" data-kpi="pendentes"><%= metricas.pendentes %></div>
+      <div class="kpi-sub">aguardando um vistoriador assumir</div>
+    </a>
+  </section>
+
+  <!-- Resumo por status (cada chip leva à fila) -->
+  <h2 class="secao-titulo">Por status de tratativa</h2>
+  <div class="resumo">
+    <% ordem.forEach(function(s){ const meta = statusMeta(s); %>
+      <a class="chip" href="/dashboard?status_tratativa=<%= encodeURIComponent(s) %>">
+        <b data-status="<%= s %>"><%= contagem[s] || 0 %></b>
+        <span class="tag <%= meta.cls %>" style="background:none;padding:0"><%= s %></span>
+      </a>
+    <% }); %>
+  </div>
+
+  <!-- Últimas ocorrências entrantes -->
+  <div class="secao-cab">
+    <h2 class="secao-titulo">Últimas ocorrências entrantes</h2>
+    <a class="btn sec sm" href="/dashboard">Ver fila completa ›</a>
+  </div>
+
+  <% if (!ultimasEntrantes.length) { %>
+    <div class="vazio"><img src="/svg/vivo-vivinho-check-purpura-centro-320x320.svg" alt=""><p>Nenhuma ocorrência ativa no momento.</p></div>
+  <% } else { %>
+    <ul class="top-lista">
+      <% ultimasEntrantes.forEach(function(o){ const meta = statusMeta(o.status_tratativa);
+           const critica = (o.afetacao || 0) >= metricas.criticaAfetacao; %>
+        <li>
+          <a href="/ocorrencias/<%= o.id_ocorrencia %>">
+            <span class="afet-grande <%= critica ? 'crit' : '' %>"><%= (o.afetacao || 0).toLocaleString('pt-BR') %><small>afet.</small></span>
+            <span class="top-info">
+              <b>#<%= o.id_ocorrencia %> · <%= o.municipio || '—' %><% if (o.ta) { %> · TA <%= o.ta %><% } %></b>
+              <small><%= o.logradouro || 'Endereço não informado' %><%= o.bairro ? ' — ' + o.bairro : '' %><%= o.armario ? ' · ' + o.armario : '' %></small>
+            </span>
+            <span class="top-meta">
+              <% if (o.status) { %><span class="tag <%= o.status === 'ABERTO' ? 'aberto' : o.status === 'FECHADO' ? 'fechado' : 'status' %>"><%= o.status %></span><% } %>
+              <span class="tag <%= meta.cls %>"><%= o.status_tratativa %></span>
+              <% if (o.vistoriador_nome) { %><small class="muted"><%= o.vistoriador_nome %></small><% } %>
+            </span>
+          </a>
+        </li>
+      <% }); %>
+    </ul>
+  <% } %>
+</main>
+
+<%- include('../partials/bottomnav') %>
+<script src="/js/painel.js?v=<%= assetVer %>"></script>
+<%- include('../partials/foot') %>

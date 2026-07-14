@@ -1,0 +1,160 @@
+<%- include('../partials/head') %>
+<%- include('../partials/topbar') %>
+
+<main class="container">
+  <div class="pagina-titulo">
+    <img src="/svg/vivo-mapa-purpura-centro-320x320.svg" alt="">
+    <h1><%= titulo %></h1>
+  </div>
+
+  <%- include('../partials/flash') %>
+
+  <%
+    const ABA_STATUS = { pendentes: 'PENDENTE', aguardando: 'AGUARDANDO CORRECAO', enviadas: 'CORRECAO ENVIADA' };
+    // Troca de aba: contexto novo e deliberado — leva busca/município/armário,
+    // mas larga o filtro Aberto/Fechado herdado de um KPI do painel.
+    function urlAba(key) {
+      const p = new URLSearchParams();
+      if (busca)             p.set('busca', busca);
+      if (filtros.municipio) p.set('municipio', filtros.municipio);
+      if (filtros.armario)   p.set('armario', filtros.armario);
+      if (filtros.empresa)   p.set('empresa', filtros.empresa);
+      if (key === 'minhas') p.set('minhas', '1');
+      else p.set('status_tratativa', ABA_STATUS[key]);
+      return '/dashboard?' + p.toString();
+    }
+    // Estado atual (usado na paginação): preserva a aba já resolvida pelo
+    // controller, inclusive o caso sem aba acesa (filtro Aberto/Fechado do KPI).
+    function baseParams() {
+      const p = new URLSearchParams();
+      if (busca)             p.set('busca', busca);
+      if (filtros.municipio) p.set('municipio', filtros.municipio);
+      if (filtros.armario)   p.set('armario', filtros.armario);
+      if (filtros.empresa)   p.set('empresa', filtros.empresa);
+      if (filtros.status)    p.set('status', filtros.status);
+      if (abaAtiva === 'minhas') p.set('minhas', '1');
+      else if (abaAtiva)         p.set('status_tratativa', ABA_STATUS[abaAtiva]);
+      return p;
+    }
+  %>
+  <nav class="abas-fila">
+    <% abas.forEach(function(a){ %>
+      <a href="<%= urlAba(a.key) %>" class="<%= abaAtiva === a.key ? 'ativa' : '' %>" data-dica="<%= a.dica %>"><b><%= a.total %></b><span><%= a.label %></span></a>
+    <% }); %>
+  </nav>
+
+  <!-- Busca / filtro -->
+  <% const ativos = [filtros.municipio, filtros.armario, filtros.empresa].filter(Boolean).length; %>
+  <form class="barra-busca" method="GET" action="/dashboard">
+    <input type="hidden" name="status_tratativa" value="<%= (abaAtiva && abaAtiva !== 'minhas') ? ABA_STATUS[abaAtiva] : '' %>">
+    <% if (abaAtiva === 'minhas') { %><input type="hidden" name="minhas" value="1"><% } %>
+    <% if (filtros.status) { %><input type="hidden" name="status" value="<%= filtros.status %>"><% } %>
+    <div class="busca-linha">
+      <input id="fila-busca-input" type="search" name="busca" value="<%= busca %>" placeholder="Filtrar na página… (Enter busca em tudo)">
+      <button class="btn sec" type="submit"><img src="/svg/lupa-320x320.svg" alt="">Buscar</button>
+      <button class="btn sec filtros-toggle" type="button" data-toggle="#filtros-painel" aria-label="Mostrar filtros"
+              data-dica="Filtrar por município, armário ou empresa">
+        <img src="/svg/vivo-ferramentas-engrenagem-purpura-centro-320x320.svg" alt="">Filtros<% if (ativos) { %><span class="filtros-num"><%= ativos %></span><% } %>
+      </button>
+    </div>
+
+    <div class="filtros-painel" id="filtros-painel" hidden>
+      <label class="f-campo">
+        <span>Município</span>
+        <select name="municipio" onchange="this.form.submit()">
+          <option value="">Todos os municípios</option>
+          <% municipios.forEach(function(m){ %><option value="<%= m %>" <%= filtros.municipio === m ? 'selected' : '' %>><%= m %></option><% }); %>
+        </select>
+      </label>
+      <label class="f-campo">
+        <span>Armário</span>
+        <select name="armario" onchange="this.form.submit()">
+          <option value="">Todos os armários</option>
+          <% armarios.forEach(function(a){ %><option value="<%= a %>" <%= filtros.armario === a ? 'selected' : '' %>><%= a %></option><% }); %>
+        </select>
+      </label>
+      <label class="f-campo">
+        <span>Empresa</span>
+        <select name="empresa" onchange="this.form.submit()">
+          <option value="">Todas as empresas</option>
+          <% empresas.forEach(function(e){ %><option value="<%= e %>" <%= filtros.empresa === e ? 'selected' : '' %>><%= e %></option><% }); %>
+        </select>
+      </label>
+    </div>
+  </form>
+
+  <% if (!ocorrencias.length) { %>
+    <div class="vazio">
+      <img src="/svg/lupa-320x320.svg" alt="">
+      <p><b>Nenhuma ocorrência encontrada.</b></p>
+      <p>Quando novas ocorrências forem importadas, aparecerão aqui.</p>
+    </div>
+  <% } else { %>
+    <div class="cards" id="fila-cards">
+      <% ocorrencias.forEach(function(o){
+           const m = statusMeta(o.status_tratativa);
+           const podeAssumir = perfil === 'vistoriador' && o.status_tratativa === 'PENDENTE';
+           const podeCorrigir = (perfil === 'analista' || perfil === 'admin') && o.status_tratativa === 'AGUARDANDO CORRECAO';
+      %>
+      <a class="card <%= m.card %>" href="/ocorrencias/<%= o.id_ocorrencia %>">
+        <div class="card-topo">
+          <div class="card-id">Ocorrência<b>#<%= o.id_ocorrencia %></b></div>
+          <% if (o.ta) { %><div class="ta-badge" data-ta="<%= o.ta %>" title="Clique para copiar" data-dica="Clique para copiar o número da TA"><small>TA</small><span class="ta-num"><%= o.ta %></span></div><% } %>
+        </div>
+        <div class="card-info">
+          <span><b><%= o.empresa || '—' %></b></span>
+          <span><%= o.cluster || '—' %></span>
+          <span><%= o.municipio || '' %><%= o.armario ? ' · ' + o.armario : '' %></span>
+        </div>
+        <% if (o.logradouro || o.bairro) { %>
+        <div class="card-endereco">
+          <img src="/svg/vivo-mapa-purpura-centro-320x320.svg" alt="">
+          <span>
+            <%= o.logradouro || '' %><%= o.numero_logradouro ? ', ' + o.numero_logradouro : '' %><%= (o.logradouro && o.bairro) ? ' — ' : '' %><%= o.bairro || '' %>
+          </span>
+        </div>
+        <% } %>
+        <div class="card-rodape">
+          <span class="afet"><img src="/svg/vivo-velocimetro-brilho-rosa-centro-320x320.svg" alt=""><%= o.afetacao || 0 %> <small class="muted" style="font-weight:400">afet.</small></span>
+          <% if (o.status) { %><span class="tag <%= o.status === 'ABERTO' ? 'aberto' : o.status === 'FECHADO' ? 'fechado' : 'status' %>"><%= o.status %></span><% } %>
+        </div>
+        <div class="card-info" style="margin-top:8px;margin-bottom:0">
+          <span>Abertura: <b><%= fmtData(o.data_ocorrencia) %></b></span>
+          <% if (o.vistoriador_nome) { %><span>Vistoriador: <b><%= o.vistoriador_nome %></b></span><% } %>
+        </div>
+        <div style="margin-top:6px">
+          <span class="tag <%= m.cls %>"><%= m.label || o.status_tratativa %></span>
+        </div>
+        <% if (podeAssumir) { %>
+          <div class="card-cta"><img src="/svg/vivo-homem-ferramentas-320x320.svg" alt="">Clique para assumir a vistoria ›</div>
+        <% } else if (podeCorrigir) { %>
+          <div class="card-cta"><img src="/svg/vivo-devices-check-purpura-centro-320x320.svg" alt="">Clique para enviar a correção ›</div>
+        <% } else { %>
+          <div class="card-cta-hint"><img src="/svg/vivo-formulario-folha-lapis-purpura-esquerda-320x320.svg" alt="">Ver detalhes ›</div>
+        <% } %>
+      </a>
+      <% }); %>
+    </div>
+
+    <%
+      // Monta URL preservando todos os filtros ativos (inclusive a aba) ao mudar de página
+      function urlFila(pg) {
+        const p = baseParams();
+        if (pg > 1) p.set('pagina', pg);
+        return '/dashboard?' + p.toString();
+      }
+      const de = (pagina - 1) * porPagina + 1;
+      const ate = (pagina - 1) * porPagina + ocorrencias.length;
+    %>
+    <div class="paginacao">
+      <span class="pag-info"><%= de %>–<%= ate %> de <b><%= total %></b> ocorrências</span>
+      <div class="pag-nav">
+        <% if (temAnterior) { %><a class="btn sec sm" href="<%= urlFila(pagina - 1) %>">← Anterior</a><% } %>
+        <% if (temMais) { %><a class="btn sec sm" href="<%= urlFila(pagina + 1) %>">Carregar mais ↓</a><% } %>
+      </div>
+    </div>
+  <% } %>
+</main>
+
+<%- include('../partials/bottomnav') %>
+<%- include('../partials/foot') %>

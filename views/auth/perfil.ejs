@@ -1,0 +1,55 @@
+<%- include('../partials/head') %>
+<%- include('../partials/topbar') %>
+
+<main class="container">
+  <div class="pagina-titulo">
+    <a href="/dashboard" class="btn sec sm">‹ Voltar</a>
+    <h1 style="margin:0">Meu perfil</h1>
+  </div>
+
+  <%- include('../partials/flash') %>
+
+  <div class="detalhe-grid">
+    <!-- Dados do usuário -->
+    <div class="bloco">
+      <h2><img src="/svg/vivo-vivinho-check-purpura-centro-320x320.svg" alt="">Meus dados</h2>
+      <div class="dados">
+        <div class="dado"><span class="rot">Nome</span><span class="val"><%= u.nome %></span></div>
+        <div class="dado"><span class="rot">E-mail</span><span class="val"><%= u.email %></span></div>
+        <div class="dado"><span class="rot">Matrícula</span><span class="val"><%= u.matricula || '—' %></span></div>
+        <div class="dado"><span class="rot">Perfil</span><span class="val"><span class="tag status"><%= u.perfil %></span></span></div>
+        <div class="dado"><span class="rot">Cluster</span><span class="val"><%= u.cluster || '—' %></span></div>
+        <div class="dado"><span class="rot">Situação</span><span class="val"><%= u.status %></span></div>
+        <div class="dado"><span class="rot">Último acesso</span><span class="val"><%= fmtData(u.ultimo_acesso) %></span></div>
+        <div class="dado"><span class="rot">Senha alterada em</span><span class="val"><%= fmtData(u.senha_alterada_em) %></span></div>
+      </div>
+    </div>
+
+    <!-- Trocar a própria senha -->
+    <div class="bloco">
+      <h2><img src="/svg/vivo-vivinho-escudo-purpura-esquerda-320x320.svg" alt="">Trocar minha senha</h2>
+      <form method="POST" action="/trocar-senha">
+        <input type="hidden" name="origem" value="perfil">
+        <div class="form-grupo">
+          <label for="senha_atual">Senha atual</label>
+          <input type="password" id="senha_atual" name="senha_atual" required autocomplete="current-password">
+        </div>
+        <div class="form-grupo">
+          <label for="nova_senha">Nova senha <span class="dica">(mín. 6 caracteres)</span></label>
+          <input type="password" id="nova_senha" name="nova_senha" minlength="6" required autocomplete="new-password">
+        </div>
+        <div class="form-grupo">
+          <label for="confirmar">Confirmar nova senha</label>
+          <input type="password" id="confirmar" name="confirmar" minlength="6" required autocomplete="new-password">
+        </div>
+        <button class="btn full rosa" type="submit">Salvar nova senha</button>
+      </form>
+      <p class="muted" style="font-size:.78rem;margin-top:10px">
+        Por segurança, não é possível reutilizar uma das últimas 5 senhas.
+      </p>
+    </div>
+  </div>
+</main>
+
+<%- include('../partials/bottomnav') %>
+<%- include('../partials/foot') %>

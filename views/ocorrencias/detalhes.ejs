@@ -1,0 +1,257 @@
+<%- include('../partials/head') %>
+<%- include('../partials/topbar') %>
+<% const m = statusMeta(o.status_tratativa); %>
+
+<main class="container">
+  <div class="pagina-titulo">
+    <a href="/dashboard" class="btn sec sm btn-voltar-fila" data-dica="Voltar para a lista de ocorrências">← Voltar para a Fila</a>
+    <h1 style="margin:0">Ocorrência #<%= o.id_ocorrencia %></h1>
+  </div>
+
+  <%- include('../partials/flash') %>
+
+  <div class="card-topo" style="margin-bottom:14px">
+    <div class="linha-acoes">
+      <% if (o.ta) { %><span class="ta-badge" data-ta="<%= o.ta %>" data-dica="Clique para copiar o número da TA" title="Clique para copiar"><small>TA</small><span class="ta-num"><%= o.ta %></span></span><% } %>
+      <% if (o.status) { %>
+        <span class="tag <%= o.status === 'ABERTO' ? 'aberto' : o.status === 'FECHADO' ? 'fechado' : 'status' %>"
+              style="font-size:.8rem;padding:.35rem .85rem;letter-spacing:.03em">
+          <%= o.status === 'ABERTO' ? '🔴' : o.status === 'FECHADO' ? '🟢' : '' %> <%= o.status %>
+        </span>
+      <% } %>
+      <span class="tag <%= m.cls %>"><%= m.label || o.status_tratativa %></span>
+      <% if (ehManual) { %>
+        <form method="POST" action="/ocorrencias/<%= o.id_ocorrencia %>/status" style="display:inline;margin:0"
+              data-confirm="Alterar o status desta ocorrência manual de <%= o.status %> para <%= o.status === 'ABERTO' ? 'FECHADO' : 'ABERTO' %>?"
+              data-confirm-titulo="Alterar status" data-confirm-sim="ALTERAR" data-confirm-classe="sec">
+          <button class="btn sm sec" type="submit" data-dica="Ocorrência manual — qualquer usuário pode alternar o status">
+            <%= o.status === 'ABERTO' ? 'Marcar como Fechado' : 'Reabrir (Aberto)' %>
+          </button>
+        </form>
+      <% } %>
+    </div>
+  </div>
+
+  <!-- Ações conforme perfil e status -->
+  <div class="bloco">
+    <div class="acoes-fixas">
+      <% if (perfil === 'vistoriador' && o.status_tratativa === 'PENDENTE') { %>
+        <form method="POST" action="/ocorrencias/<%= o.id_ocorrencia %>/assumir" style="margin:0;flex:1;min-width:140px">
+          <button class="btn rosa full" type="submit" data-dica="Atribui esta ocorrência a você para realizar a vistoria no campo">
+            <img src="/svg/vivo-homem-ferramentas-320x320.svg" alt="">Assumir vistoria</button>
+        </form>
+      <% } %>
+      <% if ((perfil === 'vistoriador' || perfil === 'admin') && o.status_tratativa === 'VISTORIA SUPERVISOR') { %>
+        <a class="btn" href="/ocorrencias/<%= o.id_ocorrencia %>/vistoria" data-dica="Preencher o formulário de vistoria com fotos e checklist">
+          <img src="/svg/vivo-formulario-folha-lapis-purpura-esquerda-320x320.svg" alt="">Preencher vistoria</a>
+      <% } %>
+      <% if (o.status_tratativa === 'VISTORIA SUPERVISOR' && (perfil === 'admin' || (perfil === 'vistoriador' && o.vistoriador_id === user.id))) { %>
+        <form method="POST" action="/ocorrencias/<%= o.id_ocorrencia %>/devolver" style="margin:0;flex:1;min-width:140px"
+              data-confirm="Devolver a ocorrência #<%= o.id_ocorrencia %> para a fila? Ela voltará a ficar disponível para outro supervisor assumir."
+              data-confirm-titulo="Devolver para a fila" data-confirm-sim="DEVOLVER" data-confirm-classe="cinza"
+              data-confirm-fig="/svg/vivo-mapa-purpura-centro-320x320.svg">
+          <button class="btn sec full" type="submit" data-dica="Libera a ocorrência para que outro supervisor possa assumir">↩ Devolver para a fila</button>
+        </form>
+      <% } %>
+      <% if ((perfil === 'analista' || perfil === 'admin' || perfil === 'gm')) { %>
+        <a class="btn sec somente-mobile" href="#tratativa" data-dica="Ir direto ao campo de tratativa nesta página">↓ Informar tratativa</a>
+      <% } %>
+      <% if ((perfil === 'vistoriador' && o.vistoriador_id === user.id || perfil === 'admin') && o.status_tratativa === 'AGUARDANDO CORRECAO') { %>
+        <a class="btn sec" href="/ocorrencias/<%= o.id_ocorrencia %>/vistoria" data-dica="Corrigir dados ou fotos da vistoria antes do analista enviar a correção">
+          <img src="/svg/vivo-formulario-folha-lapis-purpura-esquerda-320x320.svg" alt="">Editar vistoria</a>
+      <% } %>
+      <% if ((perfil === 'analista' || perfil === 'admin') && o.status_tratativa === 'AGUARDANDO CORRECAO') { %>
+        <a class="btn rosa" href="/ocorrencias/<%= o.id_ocorrencia %>/correcao" data-dica="Registrar a correção aplicada no campo e finalizar o fluxo">
+          <img src="/svg/vivo-devices-check-purpura-centro-320x320.svg" alt="">Enviar correção</a>
+      <% } %>
+    </div>
+  </div>
+
+  <div class="detalhe-grid">
+    <div>
+      <!-- Dados importados -->
+      <div class="bloco">
+        <h2><img src="/svg/vivo-tablet-lista-purpura-esquerda-320x320.svg" alt="">Dados importados</h2>
+        <div class="dados">
+          <% const campos = [
+              ['TA','ta'],['Status','status'],['Empresa','empresa'],['Cluster','cluster'],
+              ['Município','municipio'],['Bairro','bairro'],['Armário','armario'],['Causa (base)','causa'],
+              ['Afetação','afetacao'],['Fluxo','fluxo'],['Sub-status','sub_status'],['Sub-causa','sub_causa'],
+              ['REDE','rede'],['UF','uf'],['Contrato','contrato'],['SAS','sas'],['IONIX','ionix'],
+              ['Logradouro','logradouro'],['Nº','numero_logradouro'],['Regional','regional'],
+              ['Tipo de serviço','tipo_servico'],['ODS','ods'],['ID Suspeita','id_suspeita'],['Influenciador','influenciador'],
+             ]; %>
+          <% campos.forEach(function(c){ if (o[c[1]] !== null && o[c[1]] !== '' && o[c[1]] !== undefined) { %>
+            <div class="dado"><span class="rot"><%= c[0] %></span><span class="val"><%= o[c[1]] %></span></div>
+          <% }}); %>
+          <div class="dado"><span class="rot">Data ocorrência</span><span class="val"><%= fmtData(o.data_ocorrencia) %></span></div>
+          <div class="dado"><span class="rot">Data previsão</span><span class="val"><%= fmtData(o.data_previsao) %></span></div>
+          <% if (o.data_encerramento) { %><div class="dado"><span class="rot">Data encerramento</span><span class="val"><%= fmtData(o.data_encerramento) %></span></div><% } %>
+        </div>
+      </div>
+
+      <!-- Observações do sistema (botão → modal) -->
+      <% if (observacoes && observacoes.length) { %>
+      <div class="bloco" style="display:flex;align-items:center;justify-content:space-between;gap:10px;padding:14px 16px">
+        <span style="font-size:.9rem;color:var(--cinza)">
+          <b><%= observacoes.length %></b> observaç<%= observacoes.length > 1 ? 'ões' : 'ão' %> do sistema
+        </span>
+        <button class="btn sec sm" id="btnObservacoes" type="button">
+          <img src="/svg/vivo-chat-duvida-cinza-centro-320x320.svg" alt="" style="width:16px;height:16px">Ver observações
+        </button>
+      </div>
+      <% } %>
+
+      <!-- Vistoria -->
+      <% if (vistoria) { %>
+      <div class="bloco">
+        <h2><img src="/svg/vivo-ferramentas-engrenagem-purpura-centro-320x320.svg" alt="">Vistoria</h2>
+        <div class="dados">
+          <div class="dado"><span class="rot">Causa</span><span class="val"><%= vistoria.causa_nome || '—' %></span></div>
+          <div class="dado"><span class="rot">Correção definitiva</span><span class="val"><%= vistoria.correcao_definitiva %></span></div>
+          <div class="dado"><span class="rot">Vistoriador</span><span class="val"><%= vistoria.vistoriador_nome %></span></div>
+          <div class="dado"><span class="rot">Data</span><span class="val"><%= fmtData(vistoria.criado_em) %></span></div>
+        </div>
+        <hr class="sep">
+        <p class="rot" style="font-size:.72rem;color:var(--cinza)">SUGESTÃO DO VISTORIADOR</p>
+        <p><%= vistoria.sugestao_correcao %></p>
+
+        <% if (vistoriaChecklist.length) { %>
+          <hr class="sep">
+          <p class="rot" style="font-size:.72rem;color:var(--cinza)">CHECKLIST</p>
+          <% vistoriaChecklist.forEach(function(r){ %>
+            <div class="dado"><span class="rot"><%= r.pergunta %></span>
+              <span class="val"><span class="tag <%= r.resposta === 'SIM' ? 'finalizada' : 'cancelada' %>"><%= r.resposta %></span>
+              <% if (r.observacao) { %> — <%= r.observacao %><% } %></span></div>
+          <% }); %>
+        <% } %>
+
+        <% if (vistoriaFotos.length) { %>
+          <hr class="sep">
+          <p class="rot" style="font-size:.72rem;color:var(--cinza)">FOTOS DA VISTORIA</p>
+          <div class="galeria">
+            <% vistoriaFotos.forEach(function(f){ %>
+              <figure><a href="/uploads/<%= f.arquivo %>" target="_blank"><img src="/uploads/<%= f.arquivo %>" alt="<%= f.rotulo %>"></a><figcaption><%= f.rotulo %></figcaption></figure>
+            <% }); %>
+          </div>
+        <% } %>
+      </div>
+      <% } %>
+
+      <!-- Correções -->
+      <% if (correcoes.length) { %>
+      <div class="bloco">
+        <h2><img src="/svg/vivo-devices-check-purpura-centro-320x320.svg" alt="">Correções enviadas</h2>
+        <% correcoes.forEach(function(c){ %>
+          <div style="border:1px solid var(--linha);border-radius:10px;padding:12px;margin-bottom:10px">
+            <div class="card-info"><span>Por <b><%= c.analista_nome %></b></span><span><%= fmtData(c.criado_em) %></span></div>
+            <% if (c.observacao) { %><p><%= c.observacao %></p><% } %>
+            <% if (c.checklist && c.checklist.length) { %>
+              <% c.checklist.forEach(function(r){ %>
+                <div class="dado"><span class="rot"><%= r.pergunta %></span>
+                  <span class="val"><span class="tag <%= r.resposta === 'SIM' ? 'finalizada' : 'cancelada' %>"><%= r.resposta %></span><% if (r.observacao) { %> — <%= r.observacao %><% } %></span></div>
+              <% }); %>
+            <% } %>
+            <% if (c.fotos && c.fotos.length) { %>
+              <div class="galeria" style="margin-top:8px">
+                <% c.fotos.forEach(function(f){ %>
+                  <figure><a href="/uploads/<%= f.arquivo %>" target="_blank"><img src="/uploads/<%= f.arquivo %>" alt=""></a><figcaption><%= f.rotulo %></figcaption></figure>
+                <% }); %>
+              </div>
+            <% } %>
+          </div>
+        <% }); %>
+      </div>
+      <% } %>
+    </div>
+
+    <!-- Coluna lateral: tratativas + histórico -->
+    <div>
+      <!-- Informar tratativa -->
+      <% if (perfil === 'analista' || perfil === 'admin' || perfil === 'gm') { %>
+      <div class="bloco" id="tratativa">
+        <h2><img src="/svg/vivo-chat-duvida-cinza-centro-320x320.svg" alt="">Informar tratativa</h2>
+        <form method="POST" action="/ocorrencias/<%= o.id_ocorrencia %>/tratativa">
+          <div class="form-grupo">
+            <textarea name="observacao" required placeholder="Descreva a tratativa..."></textarea>
+          </div>
+          <button class="btn full" type="submit">Registrar tratativa</button>
+        </form>
+      </div>
+      <% } %>
+
+      <!-- Histórico de tratativas -->
+      <div class="bloco">
+        <h2><img src="/svg/vivo-formulario-folha-lapis-purpura-esquerda-320x320.svg" alt="">Tratativas</h2>
+        <% if (!tratativas.length) { %><p class="muted">Nenhuma tratativa registrada.</p><% } else { %>
+          <ul class="timeline">
+            <% tratativas.forEach(function(t){ %>
+              <li>
+                <div class="quando"><%= fmtData(t.criado_em) %></div>
+                <div class="obs"><%= t.observacao %></div>
+                <div class="quem"><%= t.usuario_nome %> · <%= t.perfil %></div>
+              </li>
+            <% }); %>
+          </ul>
+        <% } %>
+      </div>
+
+      <!-- Histórico completo -->
+      <div class="bloco">
+        <h2><img src="/svg/vivo-velocimetro-brilho-rosa-centro-320x320.svg" alt="">Histórico</h2>
+        <% if (!historico.length) { %><p class="muted">Sem histórico.</p><% } else { %>
+          <ul class="timeline">
+            <% historico.forEach(function(h){ %>
+              <li>
+                <div class="quando"><%= fmtData(h.criado_em) %></div>
+                <div class="acao"><%= h.acao %><% if (h.status_novo) { %> → <%= h.status_novo %><% } %></div>
+                <% if (h.observacao) { %><div class="obs"><%= h.observacao %></div><% } %>
+                <% if (h.usuario_nome) { %><div class="quem"><%= h.usuario_nome %><% if (h.perfil) { %> · <%= h.perfil %><% } %></div><% } %>
+              </li>
+            <% }); %>
+          </ul>
+        <% } %>
+      </div>
+    </div>
+  </div>
+  <!-- Modal observações do sistema (fora do grid para position:fixed funcionar corretamente) -->
+  <% if (observacoes && observacoes.length) { %>
+  <div class="modal-bg" id="modalObservacoes">
+    <div class="modal modal-obs">
+      <div class="obs-cabecalho">
+        <h3>Observações do sistema</h3>
+        <button class="btn sec sm" id="btnFecharObs" type="button">✕ Fechar</button>
+      </div>
+      <div class="obs-lista">
+        <% observacoes.forEach(function(obs) {
+          const textoLimpo = (obs.observacao || '').replace(/<br\s*\/?>/gi,'\n');
+          const primeiraLinha = textoLimpo.split('\n')[0].trim();
+          let tipo = primeiraLinha;
+          const mHash = primeiraLinha.match(/^#{2,}\s*(.+?)\s*#{2,}$/);
+          const mNum  = primeiraLinha.match(/^\d+\s*[-–]\s*(.+)$/);
+          if (mHash) tipo = mHash[1].trim();
+          else if (mNum) tipo = mNum[1].split('/')[0].trim();
+          if (tipo.length > 70) tipo = tipo.slice(0, 67) + '…';
+        %>
+          <div class="obs-item">
+            <div class="obs-tipo"><%= tipo || '—' %></div>
+            <div class="obs-meta"><%= obs.usuario %> · <%= fmtData(obs.data_observacao) %></div>
+            <div class="obs-texto"><%- obs.observacao %></div>
+          </div>
+        <% }); %>
+      </div>
+    </div>
+  </div>
+  <script>
+    (function(){
+      const bg = document.getElementById('modalObservacoes');
+      document.getElementById('btnObservacoes').addEventListener('click', function(){ bg.classList.add('aberto'); });
+      document.getElementById('btnFecharObs').addEventListener('click', function(){ bg.classList.remove('aberto'); });
+      bg.addEventListener('click', function(e){ if (e.target === bg) bg.classList.remove('aberto'); });
+    })();
+  </script>
+  <% } %>
+</main>
+
+<%- include('../partials/bottomnav') %>
+<%- include('../partials/foot') %>

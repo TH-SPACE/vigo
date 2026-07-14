@@ -1,0 +1,62 @@
+<%- include('../partials/head') %>
+<%- include('../partials/topbar') %>
+
+<main class="container">
+  <div class="pagina-titulo">
+    <a href="/ocorrencias/<%= o.id_ocorrencia %>" class="btn sec sm">‹ Voltar</a>
+    <h1 style="margin:0">Correção · #<%= o.id_ocorrencia %></h1>
+  </div>
+
+  <%- include('../partials/flash') %>
+
+  <div class="card-info" style="margin-bottom:12px">
+    <% if (o.ta) { %><span class="ta-badge"><small>TA</small><%= o.ta %></span><% } %>
+    <span><b><%= o.empresa %></b></span><span><%= o.municipio %> · <%= o.armario %></span>
+  </div>
+
+  <form method="POST" action="/ocorrencias/<%= o.id_ocorrencia %>/correcao" enctype="multipart/form-data" data-loading="Enviando correção…">
+
+    <div class="bloco">
+      <h2><img src="/svg/vivo-chat-duvida-cinza-centro-320x320.svg" alt="">Soluções Possíveis para Evitar Reincidência</h2>
+      <% perguntas.forEach(function(p, i){ %>
+        <div class="check-item">
+          <div class="perg"><span class="num"><%= i+1 %>.</span> <span><%= p.pergunta %><% if (p.obrigatoria) { %> <span class="req">*</span><% } %></span></div>
+          <div class="segment">
+            <label><input class="naoopt" type="radio" name="resposta_<%= p.id %>" value="NAO" <%= p.obrigatoria ? 'required' : '' %> checked><span class="opt">NÃO</span></label>
+            <label><input class="simopt" type="radio" name="resposta_<%= p.id %>" value="SIM"><span class="opt">SIM</span></label>
+          </div>
+          <input class="obs" type="text" name="obs_<%= p.id %>" placeholder="Observação (opcional)">
+        </div>
+      <% }); %>
+    </div>
+
+    <div class="bloco">
+      <h2><img src="/svg/vivo-formulario-folha-lapis-purpura-esquerda-320x320.svg" alt="">Observação</h2>
+      <div class="form-grupo">
+        <textarea name="observacao" placeholder="Observações da correção (opcional)..."></textarea>
+      </div>
+    </div>
+
+    <div class="bloco">
+      <h2><img src="/svg/vivo-devices-check-purpura-centro-320x320.svg" alt="">Fotos obrigatórias da correção</h2>
+      <p class="muted" style="font-size:.85rem;margin-top:-4px">Toque para abrir a câmera ou escolher da galeria.</p>
+      <div class="fotos-grid">
+        <% fotos.forEach(function(f){ %>
+          <div class="foto-slot">
+            <div class="foto-drop">
+              <img class="ic" src="/svg/vivo-devices-check-purpura-centro-320x320.svg" alt="">
+              <span class="rot"><%= f.rotulo %></span>
+              <span class="hint">jpg · png · webp</span>
+            </div>
+            <input type="file" name="<%= f.campo %>" accept="image/jpeg,image/png,image/webp" required>
+          </div>
+        <% }); %>
+      </div>
+    </div>
+
+    <button class="btn full rosa" type="submit">Enviar correção</button>
+  </form>
+</main>
+
+<%- include('../partials/bottomnav') %>
+<%- include('../partials/foot') %>

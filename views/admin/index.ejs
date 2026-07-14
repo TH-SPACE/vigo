@@ -1,0 +1,108 @@
+<%- include('../partials/head') %>
+<%- include('../partials/topbar') %>
+
+<main class="container">
+  <div class="pagina-titulo">
+    <img src="/svg/vivo-ferramentas-engrenagem-purpura-centro-320x320.svg" alt="">
+    <h1><%= titulo %></h1>
+  </div>
+
+  <%- include('../partials/flash') %>
+
+  <p class="muted" style="margin:-4px 0 16px">Tudo o que você administra em um só lugar.</p>
+
+  <div class="hub-grid">
+    <a class="hub-card" href="/admin/ocorrencias">
+      <img src="/svg/vivo-tablet-lista-purpura-esquerda-320x320.svg" alt="">
+      <span class="hub-txt">
+        <h3>Gestão de ocorrências</h3>
+        <p>Buscar, finalizar, cancelar e excluir ocorrências.</p>
+      </span>
+      <span class="badge-num"><%= contadores.ativas %><small>ativas</small></span>
+    </a>
+
+    <a class="hub-card" href="/admin/usuarios">
+      <img src="/svg/vivo-empresas-predios-purpura-esquerda-320x320.svg" alt="">
+      <span class="hub-txt">
+        <h3>Usuários</h3>
+        <p>Criar, editar, resetar senha e ativar/inativar.</p>
+      </span>
+      <span class="badge-num"><%= contadores.usuarios %><small>contas</small></span>
+    </a>
+
+    <a class="hub-card" href="/admin/causas">
+      <img src="/svg/vivo-lampada-engrenagem-folha-rosa-centro-320x320.svg" alt="">
+      <span class="hub-txt">
+        <h3>Causas</h3>
+        <p>Catálogo de causas usadas na vistoria.</p>
+      </span>
+      <span class="badge-num"><%= contadores.causas %><small>cadastr.</small></span>
+    </a>
+
+    <a class="hub-card" href="/admin/checklist">
+      <img src="/svg/vivo-formulario-folha-lapis-purpura-esquerda-320x320.svg" alt="">
+      <span class="hub-txt">
+        <h3>Checklist</h3>
+        <p>Perguntas da vistoria e da correção.</p>
+      </span>
+      <span class="badge-num"><%= contadores.checklist %><small>perguntas</small></span>
+    </a>
+
+    <a class="hub-card" href="/admin/config">
+      <img src="/svg/vivo-notebook-engrenagens-purpura-centro-320x320.svg" alt="">
+      <span class="hub-txt">
+        <h3>Importação</h3>
+        <p>Critérios e disparo da importação do TXT.</p>
+      </span>
+      <span class="badge-ic"><img src="/svg/vivo-foguete-diagonal-rosa-centro-320x320.svg" alt=""></span>
+    </a>
+
+    <a class="hub-card" href="/admin/auditoria">
+      <img src="/svg/vivo-vivinho-escudo-purpura-esquerda-320x320.svg" alt="">
+      <span class="hub-txt">
+        <h3>Auditoria</h3>
+        <p>O que cada usuário fez no sistema.</p>
+      </span>
+      <span class="badge-num"><%= contadores.auditoria %><small>registros</small></span>
+    </a>
+
+    <a class="hub-card" href="/admin/base">
+      <img src="/svg/vivo-ferramentas-engrenagem-purpura-centro-320x320.svg" alt="">
+      <span class="hub-txt">
+        <h3>Base de dados</h3>
+        <p>Apagar ocorrências em massa (encerradas ou todas).</p>
+      </span>
+      <span class="badge-num" style="color:var(--erro)"><%= contadores.total %><small>total</small></span>
+    </a>
+
+    <a class="hub-card" href="/analytics">
+      <img src="/svg/vivo-velocimetro-brilho-rosa-centro-320x320.svg" alt="">
+      <span class="hub-txt">
+        <h3>Analytics</h3>
+        <p>Gráficos de status, cluster, causa e exportação Excel.</p>
+      </span>
+      <span class="badge-num" style="color:var(--purpura)"><%= contadores.total %><small>na base</small></span>
+    </a>
+
+    <a class="hub-card" href="/admin/whatsapp">
+      <img src="/svg/vivo-smartphone-app-vivo-320x320.svg" alt="">
+      <span class="hub-txt">
+        <h3>WhatsApp</h3>
+        <p>Notificações, resumo diário e report de ocorrências abertas.</p>
+      </span>
+      <span class="badge-ic"><img src="/svg/vivo-chat-duvida-cinza-centro-320x320.svg" alt=""></span>
+    </a>
+
+    <a class="hub-card" href="/admin/reports-empresas">
+      <img src="/svg/vivo-empresas-predios-purpura-esquerda-320x320.svg" alt="">
+      <span class="hub-txt">
+        <h3>Reports por Empresa</h3>
+        <p>Um grupo de WhatsApp por empresa: ABILITY, ONDACOM, TELEMONT e TEL.</p>
+      </span>
+      <span class="badge-ic"><img src="/svg/vivo-smartphone-app-vivo-320x320.svg" alt=""></span>
+    </a>
+  </div>
+</main>
+
+<%- include('../partials/bottomnav') %>
+<%- include('../partials/foot') %>

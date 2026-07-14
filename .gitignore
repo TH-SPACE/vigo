@@ -1,0 +1,9 @@
+node_modules/
+.env
+.env.*
+uploads/
+*.log
+TBL_OCORRENCIA.TXT
+.DS_Store
+t.cookies
+*.cookies

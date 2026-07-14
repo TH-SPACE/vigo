@@ -1,0 +1,33 @@
+<%- include('../partials/head') %>
+<button class="tema-btn tema-float" type="button" data-tema-toggle aria-label="Alternar tema claro/escuro" title="Tema claro/escuro">
+  <span class="ic-lua">🌙</span><span class="ic-sol">☀️</span>
+</button>
+<div class="login-wrap">
+  <div>
+    <div class="login-card">
+      <img class="hero" src="/svg/vivo-vivinho-escudo-purpura-esquerda-320x320.svg" alt="">
+      <h1>VIGO</h1>
+      <p class="sub">Sistema de Vistoria de Ocorrências de Grande Vulto</p>
+
+      <%- include('../partials/flash') %>
+
+      <form method="POST" action="/login">
+        <div class="form-grupo">
+          <label for="email">E-mail</label>
+          <input type="email" id="email" name="email" autocomplete="username" required placeholder="nome@telefonica.com">
+        </div>
+        <div class="form-grupo">
+          <label for="senha">Senha</label>
+          <input type="password" id="senha" name="senha" autocomplete="current-password" required placeholder="••••••">
+        </div>
+        <button type="submit" class="btn full rosa">Entrar</button>
+      </form>
+      <% if (typeof autocadastro === 'undefined' || autocadastro) { %>
+        <p class="login-alt">Ainda não tem conta? <a href="/cadastro">Cadastre-se</a></p>
+      <% } %>
+    </div>
+    <p class="login-foot center">© <%= new Date().getFullYear() %> · Sistema interno</p>
+  </div>
+</div>
+<script src="/js/app.js?v=<%= assetVer %>"></script>
+</body></html>

@@ -1,0 +1,117 @@
+<%- include('../partials/head') %>
+<%- include('../partials/topbar') %>
+
+<main class="container">
+  <div class="pagina-titulo">
+    <a href="/ocorrencias/<%= o.id_ocorrencia %>" class="btn sec sm">‹ Voltar</a>
+    <h1 style="margin:0"><%= editando ? 'Editar' : '' %> Vistoria · #<%= o.id_ocorrencia %></h1>
+  </div>
+
+  <%- include('../partials/flash') %>
+
+  <div class="card-info" style="margin-bottom:12px">
+    <% if (o.ta) { %><span class="ta-badge"><small>TA</small><%= o.ta %></span><% } %>
+    <span><b><%= o.empresa %></b></span><span><%= o.municipio %> · <%= o.armario %></span>
+  </div>
+
+  <% if (o.status_tratativa === 'VISTORIA SUPERVISOR' && (user.perfil === 'admin' || (user.perfil === 'vistoriador' && o.vistoriador_id === user.id))) { %>
+    <div class="aviso-devolver">
+      <span>Assumiu sem querer?</span>
+      <form method="POST" action="/ocorrencias/<%= o.id_ocorrencia %>/devolver" style="margin:0"
+            data-confirm="Devolver a ocorrência #<%= o.id_ocorrencia %> para a fila? Ela voltará a ficar disponível para outro supervisor assumir."
+            data-confirm-titulo="Devolver para a fila" data-confirm-sim="DEVOLVER" data-confirm-classe="cinza"
+            data-confirm-fig="/svg/vivo-mapa-purpura-centro-320x320.svg">
+        <button class="btn sec sm" type="submit">↩ Devolver para a fila</button>
+      </form>
+    </div>
+  <% } %>
+
+  <% if (editando) { %>
+    <div class="aviso-info" style="margin-bottom:12px;padding:10px 14px;background:var(--roxo-suave,#f3eeff);border-radius:8px;font-size:.88rem;color:var(--roxo,#660099)">
+      Editando vistoria já enviada. O status da ocorrência não será alterado. Fotos não substituídas serão mantidas.
+    </div>
+  <% } %>
+
+  <form method="POST" action="/ocorrencias/<%= o.id_ocorrencia %>/vistoria" enctype="multipart/form-data" data-loading="<%= editando ? 'Salvando alterações…' : 'Enviando vistoria…' %>">
+
+    <div class="bloco">
+      <h2><img src="/svg/vivo-ferramentas-engrenagem-purpura-centro-320x320.svg" alt="">Dados da vistoria</h2>
+
+      <div class="form-grupo">
+        <label for="causa_id">Causa</label>
+        <select id="causa_id" name="causa_id">
+          <option value="">Selecione a causa...</option>
+          <% causas.forEach(function(c){ %>
+            <option value="<%= c.id %>" <%= (vistoria && vistoria.causa_id == c.id) ? 'selected' : '' %>><%= c.nome %></option>
+          <% }); %>
+        </select>
+      </div>
+
+      <div class="form-grupo">
+        <label for="sugestao_correcao">Sugestão de correção <span class="req">*</span></label>
+        <textarea id="sugestao_correcao" name="sugestao_correcao" required placeholder="Descreva a sugestão de correção..."><%= vistoria ? vistoria.sugestao_correcao : '' %></textarea>
+      </div>
+
+      <div class="form-grupo">
+        <label>Correção definitiva?</label>
+        <div class="segment">
+          <label><input class="naoopt" type="radio" name="correcao_definitiva" value="NAO" <%= (!vistoria || vistoria.correcao_definitiva === 'NAO') ? 'checked' : '' %>><span class="opt">NÃO</span></label>
+          <label><input class="simopt" type="radio" name="correcao_definitiva" value="SIM" <%= (vistoria && vistoria.correcao_definitiva === 'SIM') ? 'checked' : '' %>><span class="opt">SIM</span></label>
+        </div>
+      </div>
+    </div>
+
+    <div class="bloco">
+      <h2><img src="/svg/vivo-chat-duvida-cinza-centro-320x320.svg" alt="">Soluções Possíveis para Evitar Reincidência</h2>
+      <% perguntas.forEach(function(p, i){
+           const resp = respostas.find(function(r){ return r.pergunta_id === p.id; });
+           const sim  = resp && resp.resposta === 'SIM';
+      %>
+        <div class="check-item">
+          <div class="perg"><span class="num"><%= i+1 %>.</span> <span><%= p.pergunta %><% if (p.obrigatoria) { %> <span class="req">*</span><% } %></span></div>
+          <div class="segment">
+            <label><input class="naoopt" type="radio" name="resposta_<%= p.id %>" value="NAO" <%= p.obrigatoria ? 'required' : '' %> <%= !sim ? 'checked' : '' %>><span class="opt">NÃO</span></label>
+            <label><input class="simopt" type="radio" name="resposta_<%= p.id %>" value="SIM" <%= sim ? 'checked' : '' %>><span class="opt">SIM</span></label>
+          </div>
+          <input class="obs" type="text" name="obs_<%= p.id %>" placeholder="Observação (opcional)" value="<%= (resp && resp.observacao) ? resp.observacao : '' %>">
+        </div>
+      <% }); %>
+    </div>
+
+    <div class="bloco">
+      <h2><img src="/svg/vivo-smartphone-app-vivo-320x320.svg" alt="">Fotos<% if (!editando) { %> obrigatórias<% } %></h2>
+      <% if (editando) { %>
+        <p class="muted" style="font-size:.85rem;margin-top:-4px">Envie uma nova foto apenas se quiser substituir a existente.</p>
+      <% } else { %>
+        <p class="muted" style="font-size:.85rem;margin-top:-4px">Toque para abrir a câmera ou escolher da galeria.</p>
+      <% } %>
+      <div class="fotos-grid">
+        <% fotos.forEach(function(f){
+             const fotoAtual = fotosExistentes[f.rotulo];
+        %>
+          <div class="foto-slot">
+            <% if (fotoAtual) { %>
+              <div class="foto-atual" style="margin-bottom:6px">
+                <img src="/<%= fotoAtual %>" alt="<%= f.rotulo %>" style="width:100%;border-radius:6px;max-height:140px;object-fit:cover">
+                <small class="muted" style="display:block;text-align:center;margin-top:2px"><%= f.rotulo %> atual</small>
+              </div>
+            <% } else { %>
+              <div class="foto-drop">
+                <img class="ic" src="/svg/vivo-smartphone-app-vivo-320x320.svg" alt="">
+                <span class="rot"><%= f.rotulo %></span>
+                <span class="hint">jpg · png · webp</span>
+              </div>
+            <% } %>
+            <input type="file" name="<%= f.campo %>" accept="image/jpeg,image/png,image/webp" <%= editando ? '' : 'required' %>>
+            <% if (editando && fotoAtual) { %><small class="muted" style="font-size:.78rem">Deixe em branco para manter a foto atual</small><% } %>
+          </div>
+        <% }); %>
+      </div>
+    </div>
+
+    <button class="btn full rosa" type="submit"><%= editando ? 'Salvar alterações' : 'Finalizar vistoria' %></button>
+  </form>
+</main>
+
+<%- include('../partials/bottomnav') %>
+<%- include('../partials/foot') %>

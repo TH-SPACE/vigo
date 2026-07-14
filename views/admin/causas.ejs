@@ -1,0 +1,39 @@
+<%- include('../partials/head') %>
+<%- include('../partials/topbar') %>
+
+<main class="container">
+  <div class="pagina-titulo">
+    <img src="/svg/vivo-lampada-engrenagem-folha-rosa-centro-320x320.svg" alt="">
+    <h1>Causas</h1>
+  </div>
+
+  <%- include('../partials/flash') %>
+
+  <div class="bloco">
+    <h2>Nova causa</h2>
+    <form method="POST" action="/admin/causas" class="barra-busca">
+      <input type="text" name="nome" placeholder="Nome da causa" required>
+      <button class="btn" type="submit">Adicionar</button>
+    </form>
+  </div>
+
+  <div class="bloco">
+    <% if (!causas.length) { %><p class="muted">Nenhuma causa cadastrada.</p><% } %>
+    <% causas.forEach(function(c){ %>
+      <div class="linha-acoes" style="padding:.5rem 0;border-bottom:1px solid var(--linha)">
+        <form method="POST" action="/admin/causas/<%= c.id %>/editar" class="linha-acoes" style="flex:1;min-width:200px">
+          <input type="text" name="nome" value="<%= c.nome %>" style="flex:1;min-width:160px">
+          <label style="display:flex;align-items:center;gap:.3rem;white-space:nowrap"><input type="checkbox" name="ativo" value="1" style="width:auto" <%= c.ativo ? 'checked' : '' %>> Ativo</label>
+          <button class="btn sm sec" type="submit">Salvar</button>
+        </form>
+        <form method="POST" action="/admin/causas/<%= c.id %>/excluir"
+              data-confirm="Excluir a causa &quot;<%= c.nome %>&quot;?" data-confirm-titulo="Excluir causa">
+          <button class="btn sm perigo" type="submit">Excluir</button>
+        </form>
+      </div>
+    <% }); %>
+  </div>
+</main>
+
+<%- include('../partials/bottomnav') %>
+<%- include('../partials/foot') %>

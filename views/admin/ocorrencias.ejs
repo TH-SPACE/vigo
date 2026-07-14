@@ -1,0 +1,136 @@
+<%- include('../partials/head') %>
+<%- include('../partials/topbar') %>
+<% const ordem = ['PENDENTE','VISTORIA SUPERVISOR','AGUARDANDO CORRECAO','CORRECAO ENVIADA','CANCELADA'];
+   const isAdmin = user.perfil === 'admin'; %>
+
+<main class="container">
+  <div class="pagina-titulo">
+    <img src="/svg/vivo-tablet-lista-purpura-esquerda-320x320.svg" alt="">
+    <h1>Gestão de Ocorrências</h1>
+  </div>
+
+  <%- include('../partials/flash') %>
+
+  <div class="bloco">
+    <div class="card-topo">
+      <h2><img src="/svg/vivo-formulario-folha-lapis-purpura-esquerda-320x320.svg" alt="">Nova ocorrência manual</h2>
+      <button class="btn sm sec" type="button" data-toggle="#form-nova-ocorrencia">Abrir/fechar</button>
+    </div>
+    <div id="form-nova-ocorrencia" hidden style="margin-top:10px">
+      <p class="muted" style="font-size:.85rem">
+        Para casos que ainda não caíram na base importada (ex.: TA aberta, site isolado).
+        Recebe um ID provisório e entra na fila como PENDENTE — quando a ocorrência real
+        for importada, ela criará outro registro (não há como casar pelo ID da Vivo).
+      </p>
+      <form method="POST" action="/admin/ocorrencias/nova">
+        <div class="dados">
+          <div class="form-grupo"><label>TA</label><input type="text" name="ta" placeholder="365068942"></div>
+          <div class="form-grupo"><label>Armário <span class="req">*</span></label><input type="text" name="armario" placeholder="GOGNA_G1I12_1"></div>
+        </div>
+        <div class="dados">
+          <div class="form-grupo"><label>Município</label><input type="text" name="municipio" value="GOIANIA"></div>
+          <div class="form-grupo"><label>UF</label><input type="text" name="uf" value="GO" maxlength="4"></div>
+        </div>
+        <div class="dados">
+          <div class="form-grupo"><label>Cluster</label><input type="text" name="cluster" value="GOIANIA"></div>
+          <div class="form-grupo"><label>Empresa</label><input type="text" name="empresa" value="ABILITY"></div>
+        </div>
+        <div class="dados">
+          <div class="form-grupo"><label>Status</label>
+            <select name="status"><option value="ABERTO">ABERTO</option><option value="FECHADO">FECHADO</option></select>
+          </div>
+          <div class="form-grupo"><label>Sub-status <span class="dica">(ex.: ISOLADO)</span></label><input type="text" name="sub_status"></div>
+        </div>
+        <div class="dados">
+          <div class="form-grupo"><label>Tipo de serviço</label><input type="text" name="tipo_servico" placeholder="Massiva - Rede Externa"></div>
+          <div class="form-grupo"><label>Fluxo</label><input type="text" name="fluxo" placeholder="Tramitado para Rede Externa"></div>
+        </div>
+        <div class="dados">
+          <div class="form-grupo"><label>Data da ocorrência</label><input type="datetime-local" name="data_ocorrencia"></div>
+          <div class="form-grupo"><label>Afetação <span class="dica">(clientes afetados)</span></label><input type="number" name="afetacao" min="0" value="0"></div>
+        </div>
+        <div class="dados">
+          <div class="form-grupo"><label>Observação</label><textarea name="observacao" rows="2" placeholder="Ex.: Equipe iniciando confecção da primeira caixa de emenda."></textarea></div>
+          <div class="form-grupo"><label>Usuário da observação</label><input type="text" name="observacao_usuario" placeholder="Jhonathan"></div>
+        </div>
+        <button class="btn full" type="submit">Criar ocorrência</button>
+      </form>
+    </div>
+  </div>
+
+  <form class="barra-busca" method="GET" action="/admin/ocorrencias">
+    <input type="search" name="busca" value="<%= filtros.busca %>" placeholder="ID, TA, município...">
+    <select name="status_tratativa" onchange="this.form.submit()">
+      <option value="">Todos os status</option>
+      <% ordem.forEach(function(s){ %><option value="<%= s %>" <%= filtros.status_tratativa === s ? 'selected' : '' %>><%= s %></option><% }); %>
+    </select>
+    <select name="cluster" onchange="this.form.submit()">
+      <option value="">Todos os clusters</option>
+      <% clusters.forEach(function(c){ %><option value="<%= c %>" <%= filtros.cluster === c ? 'selected' : '' %>><%= c %></option><% }); %>
+    </select>
+    <select name="empresa" onchange="this.form.submit()">
+      <option value="">Todas as empresas</option>
+      <% empresas.forEach(function(e){ %><option value="<%= e %>" <%= filtros.empresa === e ? 'selected' : '' %>><%= e %></option><% }); %>
+    </select>
+    <button class="btn sec" type="submit"><img src="/svg/lupa-320x320.svg" alt="">Filtrar</button>
+  </form>
+
+  <% if (!ocorrencias.length) { %>
+    <div class="vazio"><img src="/svg/lupa-320x320.svg" alt=""><p>Nenhuma ocorrência encontrada.</p></div>
+  <% } else { %>
+    <p class="muted"><%= ocorrencias.length %> ocorrência(s).</p>
+    <div class="cards">
+      <% ocorrencias.forEach(function(o){ const m = statusMeta(o.status_tratativa); %>
+        <div class="card <%= m.card %>">
+          <a href="/ocorrencias/<%= o.id_ocorrencia %>" style="color:inherit">
+            <div class="card-topo">
+              <div class="card-id">Ocorrência<b>#<%= o.id_ocorrencia %></b></div>
+              <% if (o.ta) { %><div class="ta-badge" data-ta="<%= o.ta %>" title="Clique para copiar"><small>TA</small><span class="ta-num"><%= o.ta %></span></div><% } %>
+            </div>
+            <div class="card-info">
+              <span><b><%= o.empresa %></b></span><span><%= o.cluster %></span><span><%= o.municipio %><%= o.armario ? ' · ' + o.armario : '' %></span>
+              <span class="afet"><%= o.afetacao %> afet.</span>
+            </div>
+            <% if (o.logradouro || o.bairro) { %>
+            <div class="card-endereco">
+              <img src="/svg/vivo-mapa-purpura-centro-320x320.svg" alt="">
+              <span><%= o.logradouro || '' %><%= o.numero_logradouro ? ', ' + o.numero_logradouro : '' %><%= (o.logradouro && o.bairro) ? ' — ' : '' %><%= o.bairro || '' %></span>
+            </div>
+            <% } %>
+            <div class="linha-acoes" style="margin:6px 0">
+              <span class="tag <%= m.cls %>"><%= o.status_tratativa %></span>
+            </div>
+          </a>
+          <div class="linha-acoes">
+            <% if (o.status_tratativa !== 'CANCELADA' && o.status_tratativa !== 'CORRECAO ENVIADA') { %>
+              <form method="POST" action="/admin/ocorrencias/<%= o.id_ocorrencia %>/encerrar"
+                    data-confirm="Marcar ocorrência #<%= o.id_ocorrencia %> como Correção Enviada?" data-confirm-titulo="Encerrar ocorrência" data-confirm-sim="ENCERRAR" data-confirm-classe="ok">
+                <button class="btn sm ok" type="submit">Correção Enviada</button>
+              </form>
+              <form method="POST" action="/admin/ocorrencias/<%= o.id_ocorrencia %>/cancelar"
+                    data-confirm="Cancelar a ocorrência #<%= o.id_ocorrencia %>?" data-confirm-titulo="Cancelar ocorrência">
+                <button class="btn sm cinza" type="submit">Cancelar</button>
+              </form>
+            <% } %>
+            <% if (['VISTORIA SUPERVISOR','AGUARDANDO CORRECAO','CORRECAO ENVIADA'].includes(o.status_tratativa)) { %>
+              <form method="POST" action="/admin/ocorrencias/<%= o.id_ocorrencia %>/resetar-vistoria"
+                    data-confirm="Apagar a vistoria de #<%= o.id_ocorrencia %> e devolver à fila como PENDENTE (qualquer supervisor poderá assumir)?" data-confirm-titulo="Resetar vistoria" data-confirm-sim="RESETAR" data-confirm-classe="cinza"
+                    data-confirm-fig="/svg/vivo-formulario-folha-lapis-purpura-esquerda-320x320.svg">
+                <button class="btn sm sec" type="submit">Resetar vistoria</button>
+              </form>
+            <% } %>
+            <% if (isAdmin) { %>
+              <form method="POST" action="/admin/ocorrencias/<%= o.id_ocorrencia %>/excluir"
+                    data-confirm="Excluir DEFINITIVAMENTE a ocorrência #<%= o.id_ocorrencia %> e todo o histórico?" data-confirm-titulo="Excluir ocorrência" data-confirm-sim="EXCLUIR">
+                <button class="btn sm perigo" type="submit">Excluir</button>
+              </form>
+            <% } %>
+          </div>
+        </div>
+      <% }); %>
+    </div>
+  <% } %>
+</main>
+
+<%- include('../partials/bottomnav') %>
+<%- include('../partials/foot') %>

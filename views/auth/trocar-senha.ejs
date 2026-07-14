@@ -1,0 +1,36 @@
+<%- include('../partials/head') %>
+<button class="tema-btn tema-float" type="button" data-tema-toggle aria-label="Alternar tema claro/escuro" title="Tema claro/escuro">
+  <span class="ic-lua">🌙</span><span class="ic-sol">☀️</span>
+</button>
+<div class="login-wrap">
+  <div>
+    <div class="login-card">
+      <img class="hero" src="/svg/vivo-formulario-folha-lapis-purpura-esquerda-320x320.svg" alt="">
+      <h1>Trocar senha</h1>
+      <p class="sub">
+        <% if (user && user.primeiro_login) { %>É necessário definir uma nova senha para continuar.<% } else { %>Atualize sua senha.<% } %>
+      </p>
+
+      <%- include('../partials/flash') %>
+
+      <form method="POST" action="/trocar-senha">
+        <div class="form-grupo">
+          <label for="senha_atual">Senha atual</label>
+          <input type="password" id="senha_atual" name="senha_atual" required>
+        </div>
+        <div class="form-grupo">
+          <label for="nova_senha">Nova senha <span class="dica">(mín. 6 caracteres)</span></label>
+          <input type="password" id="nova_senha" name="nova_senha" minlength="6" required>
+        </div>
+        <div class="form-grupo">
+          <label for="confirmar">Confirmar nova senha</label>
+          <input type="password" id="confirmar" name="confirmar" minlength="6" required>
+        </div>
+        <button type="submit" class="btn full">Salvar nova senha</button>
+      </form>
+    </div>
+    <form class="login-foot center" action="/logout" method="post"><button type="submit" class="link-sair">Sair</button></form>
+  </div>
+</div>
+<script src="/js/app.js?v=<%= assetVer %>"></script>
+</body></html>

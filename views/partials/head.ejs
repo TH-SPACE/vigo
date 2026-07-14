@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+  <meta name="theme-color" content="#660099">
+  <title><%= typeof titulo !== 'undefined' ? titulo + ' · ' : '' %>VIGO</title>
+<% if (typeof ogTitle !== 'undefined') { %>
+  <meta property="og:type" content="website">
+  <meta property="og:site_name" content="VIGO · Vistoria de Ocorrências de Grande Vulto">
+  <meta property="og:title" content="<%= ogTitle %>">
+  <meta property="og:description" content="<%= ogDesc || '' %>">
+  <meta property="og:url" content="<%= ogUrl || '' %>">
+  <meta property="og:image" content="<%= ogImage || '' %>">
+  <meta name="twitter:card" content="summary">
+<% } %>
+  <script>
+    (function(){try{
+      var t=localStorage.getItem('tema');
+      if(!t)t=(window.matchMedia&&matchMedia('(prefers-color-scheme: dark)').matches)?'dark':'light';
+      if(t==='dark')document.documentElement.setAttribute('data-theme','dark');
+    }catch(e){}})();
+  </script>
+  <link rel="icon" href="/svg/vigo-icon.svg">
+  <link rel="manifest" href="/manifest.webmanifest">
+  <!-- PWA / iOS (adicionar à tela inicial) -->
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="VIGO">
+  <link rel="apple-touch-icon" href="/icons/apple-touch-icon.png">
+  <link rel="icon" type="image/png" sizes="192x192" href="/icons/icon-192.png">
+  <link rel="icon" type="image/png" sizes="512x512" href="/icons/icon-512.png">
+  <link rel="stylesheet" href="/css/app.css?v=<%= assetVer %>">
+</head>
+<body>

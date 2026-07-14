@@ -1,0 +1,136 @@
+<%- include('../partials/head') %>
+<%- include('../partials/topbar') %>
+
+<main class="container">
+  <div class="pagina-titulo">
+    <img src="/svg/vivo-smartphone-app-vivo-320x320.svg" alt="">
+    <h1>WhatsApp</h1>
+  </div>
+
+  <%- include('../partials/flash') %>
+
+  <div class="bloco">
+    <div style="display:flex;gap:.75rem;flex-wrap:wrap;align-items:center">
+      <form method="POST" action="/admin/whatsapp/teste">
+        <button class="btn" type="submit" style="background:#25D366;color:#fff;display:flex;align-items:center;gap:.4rem">
+          <svg width="17" height="17" viewBox="0 0 24 24" fill="currentColor"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347z"/><path d="M11.999 2C6.477 2 2 6.477 2 12c0 1.89.525 3.659 1.436 5.163L2 22l4.974-1.406A9.955 9.955 0 0011.999 22c5.523 0 10-4.478 10-10S17.522 2 12 2h-.001z" fill-rule="evenodd" clip-rule="evenodd" opacity=".3"/><path d="M12 4C7.582 4 4 7.582 4 12c0 1.668.463 3.23 1.267 4.566l.203.342L4.622 20l3.168-.828.33.195A7.948 7.948 0 0012 20c4.418 0 8-3.582 8-8s-3.582-8-8-8z"/></svg>
+          Testar WhatsApp
+        </button>
+      </form>
+      <form method="POST" action="/admin/whatsapp/teste-aberta">
+        <button class="btn" type="submit" style="background:#128C7E;color:#fff;display:flex;align-items:center;gap:.4rem">
+          <svg width="17" height="17" viewBox="0 0 24 24" fill="currentColor"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347z"/><path d="M11.999 2C6.477 2 2 6.477 2 12c0 1.89.525 3.659 1.436 5.163L2 22l4.974-1.406A9.955 9.955 0 0011.999 22c5.523 0 10-4.478 10-10S17.522 2 12 2h-.001z" fill-rule="evenodd" clip-rule="evenodd" opacity=".3"/><path d="M12 4C7.582 4 4 7.582 4 12c0 1.668.463 3.23 1.267 4.566l.203.342L4.622 20l3.168-.828.33.195A7.948 7.948 0 0012 20c4.418 0 8-3.582 8-8s-3.582-8-8-8z"/></svg>
+          Testar com ocorrência ABERTA
+        </button>
+      </form>
+    </div>
+  </div>
+
+  <form method="POST" action="/admin/whatsapp">
+    <div class="bloco">
+      <h2>
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor" style="vertical-align:middle;margin-right:4px"><path d="M12 2C6.477 2 2 6.477 2 12c0 1.89.525 3.659 1.436 5.163L2 22l4.974-1.406A9.955 9.955 0 0012 22c5.523 0 10-4.478 10-10S17.522 2 12 2zm5.036 13.62c-.234.66-1.158 1.207-1.9 1.365-.506.107-1.166.192-3.39-.727-2.843-1.177-4.674-4.055-4.817-4.243-.137-.187-1.15-1.53-1.15-2.92 0-1.39.73-2.073 1-2.36.234-.247.51-.31.68-.31.17 0 .34.002.487.01.157.007.367-.06.573.437.234.567.795 1.96.865 2.104.07.144.117.31.024.497-.093.187-.14.303-.28.467-.14.164-.293.367-.42.493-.14.14-.28.293-.12.573.16.28.72 1.187 1.545 1.924 1.06.947 1.955 1.24 2.235 1.38.28.14.443.117.607-.07.164-.187.7-.817.887-1.097.187-.28.373-.234.63-.14.257.093 1.63.767 1.91.907.28.14.467.21.537.327.07.117.07.677-.164 1.337z"/></svg>
+        Notificação de nova ocorrência
+      </h2>
+      <p class="muted" style="font-size:.8rem;margin-top:-4px;margin-bottom:10px">
+        Envia uma mensagem para o grupo WhatsApp assim que uma nova ocorrência entra na importação automática.
+      </p>
+      <div class="form-grupo">
+        <label style="display:flex;align-items:center;gap:.5rem">
+          <input type="checkbox" name="whatsapp_notificacao_nova_ativo" value="1" style="width:auto"
+            <%= String(cfg.whatsapp_notificacao_nova_ativo === undefined ? '1' : cfg.whatsapp_notificacao_nova_ativo) === '1' ? 'checked' : '' %>>
+          Notificar quando entrar uma nova ocorrência
+        </label>
+      </div>
+    </div>
+
+    <div class="bloco">
+      <h2>
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor" style="vertical-align:middle;margin-right:4px"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347z"/><path d="M11.999 2C6.477 2 2 6.477 2 12c0 1.89.525 3.659 1.436 5.163L2 22l4.974-1.406A9.955 9.955 0 0011.999 22c5.523 0 10-4.478 10-10S17.522 2 12 2h-.001z" fill-rule="evenodd" clip-rule="evenodd" opacity=".3"/><path d="M12 4C7.582 4 4 7.582 4 12c0 1.668.463 3.23 1.267 4.566l.203.342L4.622 20l3.168-.828.33.195A7.948 7.948 0 0012 20c4.418 0 8-3.582 8-8s-3.582-8-8-8z"/></svg>
+        Notificação de ocorrência cancelada
+      </h2>
+      <p class="muted" style="font-size:.8rem;margin-top:-4px;margin-bottom:10px">
+        Envia uma mensagem para o grupo WhatsApp quando o status de uma ocorrência (vindo da base) mudar para CANCELADO durante a importação automática.
+      </p>
+      <div class="form-grupo">
+        <label style="display:flex;align-items:center;gap:.5rem">
+          <input type="checkbox" name="whatsapp_notificacao_cancelada_ativo" value="1" style="width:auto"
+            <%= String(cfg.whatsapp_notificacao_cancelada_ativo === undefined ? '1' : cfg.whatsapp_notificacao_cancelada_ativo) === '1' ? 'checked' : '' %>>
+          Notificar quando o status virar CANCELADO
+        </label>
+      </div>
+    </div>
+
+    <div class="bloco">
+      <h2>
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor" style="vertical-align:middle;margin-right:4px"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347z"/><path d="M11.999 2C6.477 2 2 6.477 2 12c0 1.89.525 3.659 1.436 5.163L2 22l4.974-1.406A9.955 9.955 0 0011.999 22c5.523 0 10-4.478 10-10S17.522 2 12 2h-.001z" fill-rule="evenodd" clip-rule="evenodd" opacity=".3"/><path d="M12 4C7.582 4 4 7.582 4 12c0 1.668.463 3.23 1.267 4.566l.203.342L4.622 20l3.168-.828.33.195A7.948 7.948 0 0012 20c4.418 0 8-3.582 8-8s-3.582-8-8-8z"/></svg>
+        Resumo diário
+      </h2>
+      <div class="form-grupo">
+        <label style="display:flex;align-items:center;gap:.5rem">
+          <input type="checkbox" name="whatsapp_resumo_ativo" value="1" style="width:auto"
+            <%= String(cfg.whatsapp_resumo_ativo) === '1' ? 'checked' : '' %>>
+          Enviar resumo diário automático
+        </label>
+        <p class="muted" style="font-size:.8rem;margin-top:4px">Envia um resumo das ocorrências ativas para o grupo WhatsApp configurado no horário definido abaixo.</p>
+      </div>
+      <div class="dados">
+        <div class="form-grupo">
+          <label>Horário do envio</label>
+          <input type="time" name="whatsapp_resumo_hora" value="<%= cfg.whatsapp_resumo_hora || '07:00' %>" style="max-width:130px">
+        </div>
+        <div class="form-grupo">
+          <label>Dias da semana</label>
+          <div style="display:flex;gap:.6rem;flex-wrap:wrap;margin-top:4px">
+            <% const diasAtivos = String(cfg.whatsapp_resumo_dias||'1,2,3,4,5').split(',').map(d=>d.trim());
+               const nomeDias = ['Dom','Seg','Ter','Qua','Qui','Sex','Sáb'];
+               for(let i=0;i<7;i++){ %>
+              <label style="display:flex;align-items:center;gap:3px;font-size:.85rem;cursor:pointer">
+                <input type="checkbox" name="whatsapp_resumo_dias" value="<%= i %>" style="width:auto"
+                  <%= diasAtivos.includes(String(i)) ? 'checked' : '' %>>
+                <%= nomeDias[i] %>
+              </label>
+            <% } %>
+          </div>
+        </div>
+      </div>
+      <div style="margin-top:.5rem">
+        <button class="btn sm" type="submit" formaction="/admin/whatsapp/resumo" formmethod="POST" style="background:#25D366;color:#fff">Enviar resumo agora</button>
+      </div>
+    </div>
+
+    <div class="bloco">
+      <h2>
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor" style="vertical-align:middle;margin-right:4px"><path d="M12 2a10 10 0 1 0 10 10A10 10 0 0 0 12 2zm1 14.93V17a1 1 0 0 1-2 0v-.07A8 8 0 0 1 4.07 9H5a1 1 0 0 1 0 2 6 6 0 0 0 6 6zm-1-4.93a1 1 0 0 1-1-1V7a1 1 0 0 1 2 0v4a1 1 0 0 1-1 1z"/></svg>
+        Report de ocorrências abertas
+      </h2>
+      <p class="muted" style="font-size:.8rem;margin-top:-4px;margin-bottom:10px">
+        Envia automaticamente para o grupo WhatsApp a lista de ocorrências com status <b>ABERTO</b>, no intervalo configurado.
+      </p>
+      <div class="form-grupo">
+        <label style="display:flex;align-items:center;gap:.5rem">
+          <input type="checkbox" name="whatsapp_report_abertos_ativo" value="1" style="width:auto"
+            <%= String(cfg.whatsapp_report_abertos_ativo) === '1' ? 'checked' : '' %>>
+          Enviar report automático de ocorrências abertas
+        </label>
+      </div>
+      <div class="form-grupo" style="max-width:200px">
+        <label>Intervalo entre envios (minutos)</label>
+        <input type="number" name="whatsapp_report_abertos_intervalo"
+               value="<%= cfg.whatsapp_report_abertos_intervalo || 60 %>" min="5" max="1440">
+        <p class="muted" style="font-size:.75rem;margin-top:3px">Mínimo: 5 min. Padrão: 60 min.</p>
+      </div>
+      <% if (cfg.whatsapp_report_abertos_ultimo_envio) { %>
+        <p class="muted" style="font-size:.8rem">Último envio: <b><%= fmtData(cfg.whatsapp_report_abertos_ultimo_envio) %></b></p>
+      <% } %>
+      <div style="margin-top:.5rem">
+        <button class="btn sm" type="submit" formaction="/admin/whatsapp/report-abertos" formmethod="POST" style="background:#25D366;color:#fff">Enviar report agora</button>
+      </div>
+    </div>
+
+    <button class="btn full" type="submit">Salvar configurações</button>
+  </form>
+</main>
+
+<%- include('../partials/bottomnav') %>
+<%- include('../partials/foot') %>

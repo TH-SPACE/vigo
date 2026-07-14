@@ -1,0 +1,96 @@
+<%- include('../partials/head') %>
+<%- include('../partials/topbar') %>
+
+<main class="container">
+  <div class="pagina-titulo">
+    <a href="/admin" class="btn sec sm">‹ Admin</a>
+    <h1 style="margin:0">Gerenciamento da Base</h1>
+  </div>
+
+  <%- include('../partials/flash') %>
+
+  <!-- Resumo dos dados atuais -->
+  <div class="bloco">
+    <h2><img src="/svg/vivo-tablet-lista-purpura-esquerda-320x320.svg" alt="">Situação atual</h2>
+    <div class="dados" style="gap:8px">
+      <div class="resumo-item">
+        <span class="resumo-num"><%= contadores.total %></span>
+        <span class="resumo-label">Total de ocorrências</span>
+      </div>
+      <div class="resumo-item">
+        <span class="resumo-num" style="color:var(--ok)"><%= contadores.finalizadas %></span>
+        <span class="resumo-label">Correção enviada</span>
+      </div>
+      <div class="resumo-item">
+        <span class="resumo-num" style="color:var(--cinza)"><%= contadores.canceladas %></span>
+        <span class="resumo-label">Canceladas</span>
+      </div>
+      <div class="resumo-item">
+        <span class="resumo-num" style="color:var(--aviso)"><%= contadores.total - contadores.encerradas %></span>
+        <span class="resumo-label">Ainda ativas</span>
+      </div>
+    </div>
+    <p class="muted" style="font-size:.82rem;margin-top:12px">
+      Ao apagar ocorrências, todos os dados vinculados são removidos também:
+      vistorias, correções, histórico e fotos.
+    </p>
+  </div>
+
+  <!-- Apagar encerradas -->
+  <div class="bloco">
+    <h2>Apagar encerradas (Correção Enviada + Canceladas)</h2>
+    <p>Remove as <b><%= contadores.encerradas %></b> ocorrência(s) com status CORRECAO ENVIADA ou CANCELADA. As ocorrências ativas não são afetadas.</p>
+    <% if (contadores.encerradas > 0) { %>
+      <form method="POST" action="/admin/base/limpar"
+            data-confirm="Apagar <%= contadores.encerradas %> ocorrência(s) encerrada(s)? Esta ação não pode ser desfeita."
+            data-confirm-titulo="Apagar encerradas"
+            data-confirm-sim="SIM, APAGAR"
+            data-confirm-classe="perigo">
+        <input type="hidden" name="tipo" value="encerradas">
+        <button class="btn perigo" type="submit">
+          Apagar encerradas (<%= contadores.encerradas %>)
+        </button>
+      </form>
+    <% } else { %>
+      <p class="muted">Nenhuma ocorrência encerrada no momento.</p>
+    <% } %>
+  </div>
+
+  <!-- Apagar tudo -->
+  <div class="bloco" style="border:2px solid var(--erro)">
+    <h2 style="color:var(--erro)">⚠ Apagar TODAS as ocorrências</h2>
+    <p>Remove as <b><%= contadores.total %></b> ocorrência(s) do banco, incluindo as ativas. Use apenas para reprocessar toda a base do zero.</p>
+    <form method="POST" action="/admin/base/limpar">
+      <input type="hidden" name="tipo" value="tudo">
+      <div class="form-grupo">
+        <label for="confirmar-tudo">Para confirmar, digite <b>APAGAR</b> no campo abaixo:</label>
+        <input type="text" id="confirmar-tudo" name="confirmar"
+               placeholder="APAGAR" autocomplete="off"
+               style="max-width:240px;font-weight:700;letter-spacing:1px">
+      </div>
+      <button class="btn perigo" type="submit" id="btn-apagar-tudo" disabled>
+        Apagar tudo (<%= contadores.total %>)
+      </button>
+    </form>
+  </div>
+</main>
+
+<script>
+  (function () {
+    const input = document.getElementById('confirmar-tudo');
+    const btn   = document.getElementById('btn-apagar-tudo');
+    if (!input || !btn) return;
+    input.addEventListener('input', () => {
+      btn.disabled = input.value.trim() !== 'APAGAR';
+    });
+    input.closest('form').addEventListener('submit', (e) => {
+      if (input.value.trim() !== 'APAGAR') { e.preventDefault(); return; }
+      if (!confirm('Tem certeza absoluta? Isso apaga TODAS as ' + <%= contadores.total %> + ' ocorrências e não pode ser desfeito.')) {
+        e.preventDefault();
+      }
+    });
+  })();
+</script>
+
+<%- include('../partials/bottomnav') %>
+<%- include('../partials/foot') %>
