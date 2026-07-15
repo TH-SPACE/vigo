@@ -47,9 +47,12 @@ const Auditoria = {
   },
 
   // Remove registros mais antigos que `dias`. Retorna quantos foram apagados.
+  // `dias <= 0` significa "guardar para sempre": NUNCA apaga. Antes o guard era
+  // `d < 0`, então dias=0 caía no DELETE com `INTERVAL 0 DAY` (criado_em < NOW())
+  // e varria o log inteiro a cada ciclo de importação — a auditoria vivia vazia.
   async limparAntigas(dias) {
     const d = parseInt(dias, 10);
-    if (isNaN(d) || d < 0) return 0;
+    if (isNaN(d) || d <= 0) return 0;
     const [r] = await db.query(
       `DELETE FROM auditoria WHERE criado_em < (NOW() - INTERVAL ? DAY)`, [d]);
     return r.affectedRows || 0;

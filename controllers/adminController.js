@@ -134,8 +134,9 @@ module.exports = {
     if (isNaN(dias) || dias < 0) dias = 0;
     if (dias > 365) dias = 365;
     await Config.set('auditoria_retencao_dias', String(dias));
-    await Auditoria.log(req, 'CONFIG AUDITORIA', `Retenção definida para ${dias} dias`);
-    flash(res, 'ok', `Retenção da auditoria definida para ${dias} dias.`);
+    const desc = dias === 0 ? 'guardar para sempre (nunca apagar)' : `${dias} dias`;
+    await Auditoria.log(req, 'CONFIG AUDITORIA', `Retenção definida para ${desc}`);
+    flash(res, 'ok', `Retenção da auditoria: ${desc}.`);
     res.redirect('/admin/auditoria');
   },
 
