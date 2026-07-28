@@ -106,7 +106,7 @@ function fmtDataBR(v) {
   return d.toLocaleString('pt-BR', {
     timeZone: 'America/Sao_Paulo',
     day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit',
-  });
+  }).replace(',', '');
 }
 
 function fmtDuracao(ms) {
@@ -122,18 +122,17 @@ function fmtDuracao(ms) {
 
 function corpoOcorrencia(o) {
   const afetacao = Number(o.afetacao || 0).toLocaleString('pt-BR');
-  const endereco = [o.logradouro, o.numero_logradouro, o.bairro].filter(Boolean).join(', ');
-  const linhas = [`*#${o.id_ocorrencia} · ${o.municipio || '—'}*`];
+  const local = [o.municipio, o.uf].filter(Boolean).join(' / ');
+  const linhas = [`🆔 Ocorrência: ${o.id_ocorrencia}`];
+  linhas.push(`📍 ${local || '—'}`);
   if (o.empresa)   linhas.push(`🏢 Empresa: ${o.empresa}`);
   if (o.status)    linhas.push(`📶 Status: ${o.status}`);
-  if (o.armario)   linhas.push(`📦 Armário: ${o.armario}${o.ta ? ` | TA ${o.ta}` : ''}`);
-  else if (o.ta)   linhas.push(`🔧 TA: ${o.ta}`);
-  if (o.cluster)   linhas.push(`🗂️ ${o.cluster}${o.uf ? ` / ${o.uf}` : ''}`);
+  if (o.armario)   linhas.push(`📦 Armário: ${o.armario}`);
+  if (o.ta)        linhas.push(`🔧 TA: ${o.ta}`);
   if (o.causa)     linhas.push(`⚡ Causa: ${o.causa}`);
-  if (endereco)    linhas.push(`📍 ${endereco}`);
   const dt = fmtDataBR(o.data_ocorrencia);
   if (dt)          linhas.push(`🕐 Abertura: ${dt}`);
-  linhas.push(`👥 *Afetados: ${afetacao}*`);
+  linhas.push(`👥 *Afetação: ${afetacao}*`);
   return linhas;
 }
 
