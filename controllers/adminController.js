@@ -11,13 +11,15 @@ const Vistoria   = require('../models/Vistoria');
 const Foto       = require('../models/Foto');
 const Historico  = require('../models/Historico');
 const Auditoria  = require('../models/Auditoria');
-const { importarAgora, importarObservacoesAgora, importarReportsAgora } = require('../services/scheduler');
+const { importarAgora, importarObservacoesAgora, importarReportsAgora, importarRegionalAgora } = require('../services/scheduler');
 const { enviarResumoDiario } = require('../services/resumoDiario');
 const { enviarReport: enviarReportAbertos } = require('../services/reportAbertos');
 const { fetchComTimeout } = require('../services/net');
 const db = require('../database/connection');
 const Report = require('../models/ReportOcorrencia');
 const reportEmpresas = require('../services/reportEmpresas');
+const ReportRegional = require('../models/ReportRegional');
+const reportRegional = require('../services/reportRegional');
 
 const PERFIL_ID = { admin: 1, gm: 2, vistoriador: 3, analista: 4 };
 
@@ -404,6 +406,89 @@ module.exports = {
       flash(res, 'ok', `Mensagem de teste enviada para o grupo da ${empresa}.`);
     } catch (e) { flash(res, 'erro', `Falha no teste (${empresa}): ${e.message}`); }
     res.redirect('/admin/reports-empresas');
+  },
+
+  // ─────────────── Reports Regional (módulo separado, grupo único) ─────────────
+  async reportsRegional(req, res) {
+    const cfg = await Config.getAll();
+    const [{ total, abertas }, pendentes] = await Promise.all([
+      ReportRegional.resumo(),
+      ReportRegional.pendentesTotal(),
+    ]);
+    res.render('admin/reports-regional', {
+      titulo: 'Reports Regional', cfg, totalBase: total, abertas, pendentes,
+    });
+  },
+
+  async salvarReportsRegional(req, res) {
+    const texto = ['repreg_import_url', 'repreg_intervalo_minimo', 'repreg_intervalo_maximo',
+                   'repreg_empresas', 'repreg_clusters_permitidos', 'repreg_status_permitidos',
+                   'repreg_afetacao_minima', 'repreg_data_minima',
+                   'repreg_escalada_faixa1_horas', 'repreg_escalada_faixa1_intervalo',
+                   'repreg_escalada_faixa2_horas', 'repreg_escalada_faixa2_intervalo'];
+    const dados = {};
+    for (const c of texto) if (req.body[c] !== undefined) dados[c] = req.body[c];
+
+    dados.repreg_ativo                  = req.body.repreg_ativo                  ? '1' : '0';
+    dados.repreg_notificacao_ativa      = req.body.repreg_notificacao_ativa      ? '1' : '0';
+    dados.repreg_escalada_ativa         = req.body.repreg_escalada_ativa         ? '1' : '0';
+    dados.repreg_escalada_faixa1_ativa  = req.body.repreg_escalada_faixa1_ativa  ? '1' : '0';
+    dados.repreg_escalada_faixa2_ativa  = req.body.repreg_escalada_faixa2_ativa  ? '1' : '0';
+
+    const diasArr = Array.isArray(req.body.repreg_escalada_dias)
+      ? req.body.repreg_escalada_dias
+      : (req.body.repreg_escalada_dias ? [req.body.repreg_escalada_dias] : []);
+    dados.repreg_escalada_dias = diasArr.join(',');
+
+    // Ligar o módulo significa "começar do zero a partir de agora": re-arma o
+    // backfill, então a 1ª importação depois disso carrega o período parado SEM
+    // notificar, evitando despejar tudo acumulado no grupo de uma só vez.
+    const estavaDesligado = String(await Config.get('repreg_ativo', '0')) !== '1';
+    const vaiLigar = dados.repreg_ativo === '1';
+    if (estavaDesligado && vaiLigar) dados.repreg_backfill_feito = '0';
+
+    await Config.setMany(dados);
+    await Auditoria.log(req, 'SALVOU CONFIGURAÇÃO', 'Reports Regional');
+    flash(res, 'ok', estavaDesligado && vaiLigar
+      ? 'Módulo ligado. A próxima importação carrega a base sem notificar — só o que entrar depois dela vira mensagem.'
+      : 'Configurações do módulo regional salvas.');
+    res.redirect('/admin/reports-regional');
+  },
+
+  async reportsRegionalImportarAgora(req, res) {
+    try {
+      const r = await importarRegionalAgora();
+      await Auditoria.log(req, 'IMPORTAÇÃO REGIONAL', r.resultado);
+      flash(res, 'ok', `Importação concluída: ${r.resultado}.` +
+        (r.notificadas ? ` ${r.notificadas} notificação(ões) enviada(s).` : ''));
+    } catch (e) { flash(res, 'erro', 'Falha na importação: ' + e.message); }
+    res.redirect('/admin/reports-regional');
+  },
+
+  // Silencia a base atual: carimba tudo como já avisado, sem enviar nada.
+  async reportsRegionalMarcarAvisadas(req, res) {
+    try {
+      const n = await ReportRegional.marcarTudoComoAvisado(reportRegional.agoraBrasilia());
+      await Auditoria.log(req, 'REGIONAL SILENCIAR BASE', `${n} ocorrência(s) marcadas como avisadas`);
+      flash(res, 'ok', `${n} ocorrência(s) marcadas como já avisadas. Só o que entrar a partir de agora gera mensagem.`);
+    } catch (e) { flash(res, 'erro', 'Falha ao marcar: ' + e.message); }
+    res.redirect('/admin/reports-regional');
+  },
+
+  // Manda uma ocorrência real (ou uma sonda, se não houver aberta) para o grupo
+  // único — serve para validar o cadastro do grupo/número.
+  async reportsRegionalTestar(req, res) {
+    try {
+      const o = await ReportRegional.umaAberta();
+      const texto = o
+        ? reportRegional.msgNova(o)
+        : `🧪 *Teste — Regional*\n\nGrupo configurado corretamente.\nNenhuma ocorrência ABERTA no momento na base do módulo.`;
+
+      await reportRegional.enviarTexto(texto);
+      await Auditoria.log(req, 'TESTE REPORT REGIONAL', 'grupo único');
+      flash(res, 'ok', 'Mensagem de teste enviada para o grupo regional.');
+    } catch (e) { flash(res, 'erro', `Falha no teste: ${e.message}`); }
+    res.redirect('/admin/reports-regional');
   },
 
   async importarAgora(req, res) {

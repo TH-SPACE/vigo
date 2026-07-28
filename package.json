@@ -8,6 +8,7 @@
     "dev": "nodemon server.js",
     "setup": "node database/setup.js",
     "setup:reports": "node database/setup-reports.js",
+    "setup:regional": "node database/setup-regional.js",
     "import": "node services/runImport.js"
   },
   "dependencies": {

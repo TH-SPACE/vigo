@@ -1,0 +1,11 @@
+Coloque aqui os 6 prints do sistema (arraste os PNG para esta pasta no VSCode).
+Use EXATAMENTE estes nomes:
+
+  01-dashboard.png         -> /dashboard (dash inicial pos-login)
+  02-hub-admin.png         -> /admin (hub dos modulos)
+  03-ocorrencias.png       -> /admin/ocorrencias
+  04-reports-empresas.png  -> /admin/reports-empresas
+  05-reports-regional.png  -> /admin/reports-regional
+  06-regional-cadastro.png -> /regional (reportb2b, porta 3013)
+
+Depois me avise: eu re-rodo o gerador e os prints entram no PPTX automaticamente.

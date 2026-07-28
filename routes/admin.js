@@ -47,6 +47,13 @@ router.post('/reports-empresas/importar',         admin.reportsImportarAgora);
 router.post('/reports-empresas/silenciar',        admin.reportsMarcarAvisadas);
 router.post('/reports-empresas/testar/:empresa',  admin.reportsTestar);
 
+// Reports Regional (módulo separado: tabela report_regional, configs repreg_*)
+router.get('/reports-regional',            admin.reportsRegional);
+router.post('/reports-regional',           admin.salvarReportsRegional);
+router.post('/reports-regional/importar',  admin.reportsRegionalImportarAgora);
+router.post('/reports-regional/silenciar', admin.reportsRegionalMarcarAvisadas);
+router.post('/reports-regional/testar',    admin.reportsRegionalTestar);
+
 // Analytics
 router.get('/analytics',          admin.analytics);
 router.get('/analytics/exportar', admin.exportarBase);

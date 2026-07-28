@@ -12,6 +12,11 @@ const { verificarEnvio: verificarResumoDiario } = require('./resumoDiario');
 const { verificarEnvio: verificarReportAbertos } = require('./reportAbertos');
 const { importar: importarReports } = require('./importadorReports');
 const { verificarEscalada, processarNotificacoes } = require('./reportEmpresas');
+const { importar: importarRegional } = require('./importadorRegional');
+const {
+  verificarEscalada: verificarEscaladaRegional,
+  processarNotificacoes: processarNotificacoesRegional,
+} = require('./reportRegional');
 
 let timer = null;
 let rodando = false;
@@ -20,6 +25,10 @@ let rodando = false;
 // independentes da importação do VIGO (config rep_*).
 let timerReports = null;
 let rodandoReports = false;
+
+// Ciclo próprio do módulo de Reports Regional — idem, independente (config repreg_*).
+let timerRegional = null;
+let rodandoRegional = false;
 
 // Limpa a auditoria conforme a retenção configurável (padrão 15 dias).
 async function limparAuditoria() {
@@ -111,6 +120,43 @@ async function importarReportsAgora() {
   }
 }
 
+// ── Módulo Reports Regional ──────────────────────────────────────────────
+
+async function cicloRegional() {
+  try {
+    const ativo = await Config.get('repreg_ativo', '0');
+    if (String(ativo) === '1' && !rodandoRegional) {
+      rodandoRegional = true;
+      try { await importarRegional(); }
+      finally { rodandoRegional = false; }
+    }
+  } catch (e) {
+    rodandoRegional = false;
+    console.error('[RegionalImport] Erro no ciclo:', e.message);
+  } finally {
+    await agendarProximoRegional();
+  }
+}
+
+async function agendarProximoRegional() {
+  const min = parseInt(await Config.get('repreg_intervalo_minimo', '10'), 10) || 10;
+  const max = parseInt(await Config.get('repreg_intervalo_maximo', '20'), 10) || 20;
+  const minutos = minutosAleatorios(min, max);
+  if (timerRegional) clearTimeout(timerRegional);
+  timerRegional = setTimeout(cicloRegional, minutos * 60 * 1000);
+}
+
+// Importação manual do módulo (botão da tela de config); reagenda o ciclo.
+async function importarRegionalAgora() {
+  if (rodandoRegional) throw new Error('Já existe uma importação regional em andamento.');
+  rodandoRegional = true;
+  try { return await importarRegional(); }
+  finally {
+    rodandoRegional = false;
+    await agendarProximoRegional();
+  }
+}
+
 // Importação manual (botão do admin); reagenda o ciclo.
 async function importarAgora(usuario) {
   if (rodando) throw new Error('Já existe uma importação em andamento.');
@@ -147,9 +193,18 @@ function iniciarScheduler() {
   setInterval(() => {
     processarNotificacoes().catch(e => console.error('[ReportEmpresas] Erro nas notificações:', e.message));
   }, 60 * 1000);
+
+  // Reports Regional: mesmo desenho do módulo de empresas, ciclo próprio.
+  timerRegional = setTimeout(cicloRegional, 60 * 1000);
+  setInterval(() => {
+    verificarEscaladaRegional().catch(e => console.error('[ReportRegional] Erro na escalada:', e.message));
+  }, 60 * 1000);
+  setInterval(() => {
+    processarNotificacoesRegional().catch(e => console.error('[ReportRegional] Erro nas notificações:', e.message));
+  }, 60 * 1000);
 }
 
 module.exports = {
   iniciarScheduler, importarAgora, importarObservacoesAgora, minutosAleatorios,
-  importarReportsAgora,
+  importarReportsAgora, importarRegionalAgora,
 };
