@@ -11,7 +11,7 @@ const Vistoria   = require('../models/Vistoria');
 const Foto       = require('../models/Foto');
 const Historico  = require('../models/Historico');
 const Auditoria  = require('../models/Auditoria');
-const { importarAgora, importarObservacoesAgora, importarReportsAgora, importarRegionalAgora } = require('../services/scheduler');
+const { importarAgora, importarObservacoesAgora, importarReportsAgora, importarRegionalAgora, importarAtrasoAgora } = require('../services/scheduler');
 const { enviarResumoDiario } = require('../services/resumoDiario');
 const { enviarReport: enviarReportAbertos } = require('../services/reportAbertos');
 const { fetchComTimeout } = require('../services/net');
@@ -20,6 +20,8 @@ const Report = require('../models/ReportOcorrencia');
 const reportEmpresas = require('../services/reportEmpresas');
 const ReportRegional = require('../models/ReportRegional');
 const reportRegional = require('../services/reportRegional');
+const ReportAtraso = require('../models/ReportAtraso');
+const reportAtraso = require('../services/reportAtraso');
 
 const PERFIL_ID = { admin: 1, gm: 2, vistoriador: 3, analista: 4 };
 
@@ -489,6 +491,108 @@ module.exports = {
       flash(res, 'ok', 'Mensagem de teste enviada para o grupo regional.');
     } catch (e) { flash(res, 'erro', `Falha no teste: ${e.message}`); }
     res.redirect('/admin/reports-regional');
+  },
+
+  // ─────────────── Reports de Atraso (módulo separado, só escalada) ───────────
+  async reportsAtraso(req, res) {
+    const cfg = await Config.getAll();
+    const nomes = await Config.getLista('repat_empresas');
+    const [resumo, total] = await Promise.all([
+      ReportAtraso.resumoPorEmpresa(nomes),
+      ReportAtraso.total(),
+    ]);
+    const porNome = new Map(resumo.map(r => [String(r.empresa).toUpperCase(), r]));
+
+    const empresas = nomes.map(nome => {
+      const slug = reportAtraso.slugEmpresa(nome);
+      const r = porNome.get(nome) || {};
+      return {
+        nome, slug,
+        target:  reportAtraso.targetDe(nome),
+        ativo:   String(cfg[`repat_empresa_${slug}_ativo`] ?? '1') === '1',
+        total:   Number(r.total || 0),
+        abertas: Number(r.abertas || 0),
+      };
+    });
+
+    res.render('admin/reports-atraso', {
+      titulo: 'Reports de Atraso', cfg, empresas, totalBase: total,
+    });
+  },
+
+  async salvarReportsAtraso(req, res) {
+    const texto = ['repat_import_url', 'repat_intervalo_minimo', 'repat_intervalo_maximo',
+                   'repat_empresas', 'repat_clusters_permitidos', 'repat_data_minima',
+                   'repat_escalada_faixa1_horas', 'repat_escalada_faixa1_intervalo',
+                   'repat_escalada_faixa2_horas', 'repat_escalada_faixa2_intervalo'];
+    const dados = {};
+    for (const c of texto) if (req.body[c] !== undefined) dados[c] = req.body[c];
+
+    dados.repat_ativo                  = req.body.repat_ativo                  ? '1' : '0';
+    dados.repat_escalada_ativa         = req.body.repat_escalada_ativa         ? '1' : '0';
+    dados.repat_escalada_faixa1_ativa  = req.body.repat_escalada_faixa1_ativa  ? '1' : '0';
+    dados.repat_escalada_faixa2_ativa  = req.body.repat_escalada_faixa2_ativa  ? '1' : '0';
+
+    const diasArr = Array.isArray(req.body.repat_escalada_dias)
+      ? req.body.repat_escalada_dias
+      : (req.body.repat_escalada_dias ? [req.body.repat_escalada_dias] : []);
+    dados.repat_escalada_dias = diasArr.join(',');
+
+    // Toggle de cada empresa. A lista de empresas é editável, então o toggle é
+    // derivado do que foi salvo agora — não do que existia antes.
+    const empresas = String(dados.repat_empresas ?? await Config.get('repat_empresas', ''))
+      .split(',').map(s => s.trim().toUpperCase()).filter(Boolean);
+    const marcadas = Array.isArray(req.body.empresas_ativas)
+      ? req.body.empresas_ativas
+      : (req.body.empresas_ativas ? [req.body.empresas_ativas] : []);
+    for (const e of empresas) {
+      const slug = reportAtraso.slugEmpresa(e);
+      dados[`repat_empresa_${slug}_ativo`] = marcadas.includes(slug) ? '1' : '0';
+    }
+
+    // Ligar o módulo significa "começar do zero a partir de agora": re-arma o
+    // backfill, então a 1ª importação depois disso zera o relógio da escalada
+    // para tudo, em vez de cobrar de uma vez tudo que já estava velho.
+    const estavaDesligado = String(await Config.get('repat_ativo', '0')) !== '1';
+    const vaiLigar = dados.repat_ativo === '1';
+    if (estavaDesligado && vaiLigar) dados.repat_backfill_feito = '0';
+
+    await Config.setMany(dados);
+    await Auditoria.log(req, 'SALVOU CONFIGURAÇÃO', 'Reports de Atraso');
+    flash(res, 'ok', estavaDesligado && vaiLigar
+      ? 'Módulo ligado. A próxima importação carrega a base com o relógio da escalada zerado — a cobrança normal começa a partir daí.'
+      : 'Configurações do módulo de atraso salvas.');
+    res.redirect('/admin/reports-atraso');
+  },
+
+  async reportsAtrasoImportarAgora(req, res) {
+    try {
+      const r = await importarAtrasoAgora();
+      await Auditoria.log(req, 'IMPORTAÇÃO ATRASO', r.resultado);
+      flash(res, 'ok', `Importação concluída: ${r.resultado}.`);
+    } catch (e) { flash(res, 'erro', 'Falha na importação: ' + e.message); }
+    res.redirect('/admin/reports-atraso');
+  },
+
+  // Manda uma ocorrência real da empresa (ou uma mensagem de sonda, se não houver
+  // nenhuma aberta) para o grupo dela — serve para validar o cadastro do grupo.
+  async reportsAtrasoTestar(req, res) {
+    const empresa = String(req.params.empresa || '').toUpperCase();
+    try {
+      const permitidas = await Config.getLista('repat_empresas');
+      if (!permitidas.includes(empresa)) throw new Error(`Empresa "${empresa}" não está na lista do módulo.`);
+
+      const o = await ReportAtraso.umaAberta(empresa);
+      const abertura = o && reportAtraso.paraDate(o.data_ocorrencia);
+      const texto = abertura
+        ? reportAtraso.msgEscalada(o, Date.now() - abertura.getTime())
+        : `🧪 *Teste — Atraso ${empresa}*\n\nGrupo configurado corretamente.\nNenhuma ocorrência ABERTA no momento para esta empresa.`;
+
+      await reportAtraso.enviarTexto(empresa, texto);
+      await Auditoria.log(req, 'TESTE REPORT ATRASO', empresa);
+      flash(res, 'ok', `Mensagem de teste enviada para o grupo de atraso da ${empresa}.`);
+    } catch (e) { flash(res, 'erro', `Falha no teste (${empresa}): ${e.message}`); }
+    res.redirect('/admin/reports-atraso');
   },
 
   async importarAgora(req, res) {

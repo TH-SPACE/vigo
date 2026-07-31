@@ -17,6 +17,8 @@ const {
   verificarEscalada: verificarEscaladaRegional,
   processarNotificacoes: processarNotificacoesRegional,
 } = require('./reportRegional');
+const { importar: importarAtraso } = require('./importadorAtraso');
+const { verificarEscalada: verificarEscaladaAtraso } = require('./reportAtraso');
 
 let timer = null;
 let rodando = false;
@@ -29,6 +31,10 @@ let rodandoReports = false;
 // Ciclo próprio do módulo de Reports Regional — idem, independente (config repreg_*).
 let timerRegional = null;
 let rodandoRegional = false;
+
+// Ciclo próprio do módulo de Reports de Atraso — idem, independente (config repat_*).
+let timerAtraso = null;
+let rodandoAtraso = false;
 
 // Limpa a auditoria conforme a retenção configurável (padrão 15 dias).
 async function limparAuditoria() {
@@ -157,6 +163,43 @@ async function importarRegionalAgora() {
   }
 }
 
+// ── Módulo Reports de Atraso ──────────────────────────────────────────────
+
+async function cicloAtraso() {
+  try {
+    const ativo = await Config.get('repat_ativo', '0');
+    if (String(ativo) === '1' && !rodandoAtraso) {
+      rodandoAtraso = true;
+      try { await importarAtraso(); }
+      finally { rodandoAtraso = false; }
+    }
+  } catch (e) {
+    rodandoAtraso = false;
+    console.error('[AtrasoImport] Erro no ciclo:', e.message);
+  } finally {
+    await agendarProximoAtraso();
+  }
+}
+
+async function agendarProximoAtraso() {
+  const min = parseInt(await Config.get('repat_intervalo_minimo', '10'), 10) || 10;
+  const max = parseInt(await Config.get('repat_intervalo_maximo', '20'), 10) || 20;
+  const minutos = minutosAleatorios(min, max);
+  if (timerAtraso) clearTimeout(timerAtraso);
+  timerAtraso = setTimeout(cicloAtraso, minutos * 60 * 1000);
+}
+
+// Importação manual do módulo (botão da tela de config); reagenda o ciclo.
+async function importarAtrasoAgora() {
+  if (rodandoAtraso) throw new Error('Já existe uma importação de atraso em andamento.');
+  rodandoAtraso = true;
+  try { return await importarAtraso(); }
+  finally {
+    rodandoAtraso = false;
+    await agendarProximoAtraso();
+  }
+}
+
 // Importação manual (botão do admin); reagenda o ciclo.
 async function importarAgora(usuario) {
   if (rodando) throw new Error('Já existe uma importação em andamento.');
@@ -202,9 +245,16 @@ function iniciarScheduler() {
   setInterval(() => {
     processarNotificacoesRegional().catch(e => console.error('[ReportRegional] Erro nas notificações:', e.message));
   }, 60 * 1000);
+
+  // Reports de Atraso: ciclo próprio + escalada a cada minuto. Só tem o
+  // gatilho de escalada — não há notificação de entrada para reenviar.
+  timerAtraso = setTimeout(cicloAtraso, 60 * 1000);
+  setInterval(() => {
+    verificarEscaladaAtraso().catch(e => console.error('[ReportAtraso] Erro na escalada:', e.message));
+  }, 60 * 1000);
 }
 
 module.exports = {
   iniciarScheduler, importarAgora, importarObservacoesAgora, minutosAleatorios,
-  importarReportsAgora, importarRegionalAgora,
+  importarReportsAgora, importarRegionalAgora, importarAtrasoAgora,
 };

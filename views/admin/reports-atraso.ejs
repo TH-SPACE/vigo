@@ -1,0 +1,234 @@
+<%- include('../partials/head') %>
+<%- include('../partials/topbar') %>
+
+<main class="container">
+  <div class="pagina-titulo">
+    <img src="/svg/vivo-velocimetro-brilho-rosa-centro-320x320.svg" alt="">
+    <h1>Reports de Atraso</h1>
+  </div>
+
+  <%- include('../partials/flash') %>
+
+  <!-- ── STATUS ── -->
+  <div class="bloco">
+    <div class="card-info" style="flex-wrap:wrap;gap:6px">
+      <span>Base: <b><%= Number(totalBase).toLocaleString('pt-BR') %></b></span>
+      <span>Última importação: <b><%= cfg.repat_ultima_importacao ? fmtData(cfg.repat_ultima_importacao) : 'nunca' %></b></span>
+      <span>Módulo: <b style="color:<%= String(cfg.repat_ativo)==='1' ? '#16a34a' : '#dc2626' %>">
+        <%= String(cfg.repat_ativo)==='1' ? 'LIGADO' : 'DESLIGADO' %></b></span>
+    </div>
+
+    <p class="muted" style="font-size:.8rem;background:#f8fafc;padding:.6rem;border-radius:6px;margin:.6rem 0 0">
+      ⏰ Este módulo só cobra <b>atraso</b> (ocorrência ABERTA há muito tempo). Não avisa entrada nem
+      fechamento — isso já é feito pelo módulo <a href="/admin/reports-empresas">Reports por Empresa</a>.
+      Diferença principal: aqui <b>não há filtro de cluster por padrão</b>, cobre qualquer região.
+    </p>
+
+    <div style="display:flex;gap:.75rem;flex-wrap:wrap;align-items:center;margin-top:.75rem">
+      <form method="POST" action="/admin/reports-atraso/importar">
+        <button class="btn rosa" type="submit">
+          <img src="/svg/vivo-foguete-diagonal-rosa-centro-320x320.svg" alt="">Importar agora
+        </button>
+      </form>
+    </div>
+  </div>
+
+  <form method="POST" action="/admin/reports-atraso">
+
+    <!-- ── ENVIO ── -->
+    <div class="bloco">
+      <h2><img src="/svg/vivo-smartphone-app-vivo-320x320.svg" alt="">Envio</h2>
+
+      <div class="form-grupo">
+        <label style="display:flex;align-items:center;gap:.5rem">
+          <input type="checkbox" name="repat_ativo" value="1" style="width:auto"
+            <%= String(cfg.repat_ativo) === '1' ? 'checked' : '' %>>
+          <b>Módulo ligado</b>
+        </label>
+        <p class="muted" style="font-size:.78rem;margin-top:2px">Chave geral: importa a base e cobra atraso. Não afeta o VIGO nem os outros módulos.</p>
+      </div>
+
+      <div class="form-grupo">
+        <label style="display:flex;align-items:center;gap:.5rem">
+          <input type="checkbox" name="repat_escalada_ativa" value="1" style="width:auto"
+            <%= String(cfg.repat_escalada_ativa ?? '1') === '1' ? 'checked' : '' %>>
+          Ativar <b>cobrança</b>
+        </label>
+        <p class="muted" style="font-size:.78rem;margin-top:2px">Chave da escalada: sem isso marcado, nenhuma faixa cobra, mesmo com o módulo ligado.</p>
+      </div>
+
+      <p class="muted" style="font-size:.8rem;background:#f8fafc;padding:.6rem;border-radius:6px;margin:0">
+        📌 <b>Ligar o módulo zera o relógio da escalada na 1ª importação seguinte.</b> Ocorrência já
+        aberta há dias não cobra tudo de uma vez — a cobrança normal só começa a partir dali.
+      </p>
+    </div>
+
+    <!-- ── EMPRESAS ── -->
+    <div class="bloco">
+      <h2><img src="/svg/vivo-empresas-predios-purpura-esquerda-320x320.svg" alt="">Empresas e grupos</h2>
+      <p class="muted" style="font-size:.78rem;margin-top:-4px;margin-bottom:10px">
+        Cada empresa cobra no seu próprio grupo, cadastrado no dashboard do reportb2b (cards "Atraso · ...").
+      </p>
+
+      <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:.75rem">
+        <% empresas.forEach(function(e){ %>
+          <div style="border:1px solid var(--borda,#e5e7eb);border-radius:10px;padding:.75rem">
+            <label style="display:flex;align-items:center;gap:.5rem;font-weight:600">
+              <input type="checkbox" name="empresas_ativas" value="<%= e.slug %>" style="width:auto"
+                <%= e.ativo ? 'checked' : '' %>>
+              <%= e.nome %>
+            </label>
+            <p class="muted" style="font-size:.78rem;margin:.4rem 0 .5rem">
+              <b style="color:var(--erro)"><%= e.abertas %></b> aberta<%= e.abertas === 1 ? '' : 's' %>
+              · <%= Number(e.total).toLocaleString('pt-BR') %> na base<br>
+              <span style="font-size:.72rem">grupo: <code><%= e.target %></code></span>
+            </p>
+            <button class="btn sm" type="submit"
+                    formaction="/admin/reports-atraso/testar/<%= encodeURIComponent(e.nome) %>"
+                    formmethod="POST" formnovalidate
+                    style="background:#25D366;color:#fff">Enviar teste</button>
+          </div>
+        <% }) %>
+      </div>
+      <% if (!empresas.length) { %>
+        <p class="muted">Nenhuma empresa configurada. Preencha "Empresas" abaixo.</p>
+      <% } %>
+    </div>
+
+    <!-- ── ESCALADA ── -->
+    <div class="bloco">
+      <h2><img src="/svg/vivo-velocimetro-brilho-rosa-centro-320x320.svg" alt="">Escalada</h2>
+      <p class="muted" style="font-size:.78rem;margin-top:-4px;margin-bottom:10px">
+        Cada faixa liga e desliga sozinha. Padrão pedido: aberto há mais de 12h, cobra a cada 2h.
+      </p>
+
+      <% const f1Ativa = String(cfg.repat_escalada_faixa1_ativa ?? '1') === '1';
+         const f2Ativa = String(cfg.repat_escalada_faixa2_ativa ?? '0') === '1'; %>
+
+      <div class="faixa" style="border:1px solid var(--borda,#e5e7eb);border-radius:10px;padding:.75rem;margin-bottom:.6rem<%= f1Ativa ? '' : ';opacity:.5' %>">
+        <label style="display:flex;align-items:center;gap:.5rem;font-weight:600">
+          <input type="checkbox" name="repat_escalada_faixa1_ativa" value="1" style="width:auto"
+            <%= f1Ativa ? 'checked' : '' %>>
+          1ª faixa
+        </label>
+        <div class="dados" style="margin-top:.5rem">
+          <div class="form-grupo">
+            <label>Aberta há mais de (h)</label>
+            <input type="number" name="repat_escalada_faixa1_horas" min="1" max="720"
+                   value="<%= cfg.repat_escalada_faixa1_horas || 12 %>">
+          </div>
+          <div class="form-grupo">
+            <label>cobrar a cada (h)</label>
+            <input type="number" name="repat_escalada_faixa1_intervalo" min="1" max="72"
+                   value="<%= cfg.repat_escalada_faixa1_intervalo || 2 %>">
+          </div>
+        </div>
+      </div>
+
+      <div class="faixa" style="border:1px solid var(--borda,#e5e7eb);border-radius:10px;padding:.75rem<%= f2Ativa ? '' : ';opacity:.5' %>">
+        <label style="display:flex;align-items:center;gap:.5rem;font-weight:600">
+          <input type="checkbox" name="repat_escalada_faixa2_ativa" value="1" style="width:auto"
+            <%= f2Ativa ? 'checked' : '' %>>
+          2ª faixa
+        </label>
+        <div class="dados" style="margin-top:.5rem">
+          <div class="form-grupo">
+            <label>Aberta há mais de (h)</label>
+            <input type="number" name="repat_escalada_faixa2_horas" min="1" max="720"
+                   value="<%= cfg.repat_escalada_faixa2_horas || 24 %>">
+          </div>
+          <div class="form-grupo">
+            <label>cobrar a cada (h)</label>
+            <input type="number" name="repat_escalada_faixa2_intervalo" min="1" max="72"
+                   value="<%= cfg.repat_escalada_faixa2_intervalo || 1 %>">
+          </div>
+        </div>
+      </div>
+
+      <p class="muted" id="escalada-vazia" style="font-size:.8rem;color:#b45309;margin:.6rem 0 0<%= (f1Ativa || f2Ativa) ? ';display:none' : '' %>">
+        ⚠️ Nenhuma faixa marcada: com a escalada ligada, nada será cobrado.
+      </p>
+
+      <script>
+        (function () {
+          const faixas = [...document.querySelectorAll('.faixa')];
+          const aviso  = document.getElementById('escalada-vazia');
+          function pintar() {
+            let alguma = false;
+            for (const f of faixas) {
+              const on = f.querySelector('input[type=checkbox]').checked;
+              f.style.opacity = on ? '' : '.5';
+              if (on) alguma = true;
+            }
+            aviso.style.display = alguma ? 'none' : '';
+          }
+          for (const f of faixas) {
+            f.querySelector('input[type=checkbox]').addEventListener('change', pintar);
+          }
+        })();
+      </script>
+
+      <div class="form-grupo">
+        <label>Dias <span class="dica">(cobra o dia inteiro, inclusive de madrugada)</span></label>
+        <div style="display:flex;gap:.6rem;flex-wrap:wrap;margin-top:4px">
+          <% const diasAtivos = String(cfg.repat_escalada_dias || '0,1,2,3,4,5,6').split(',').map(d => d.trim());
+             const nomeDias = ['Dom','Seg','Ter','Qua','Qui','Sex','Sáb'];
+             for (let i = 0; i < 7; i++) { %>
+            <label style="display:flex;align-items:center;gap:3px;font-size:.85rem;cursor:pointer">
+              <input type="checkbox" name="repat_escalada_dias" value="<%= i %>" style="width:auto"
+                <%= diasAtivos.includes(String(i)) ? 'checked' : '' %>>
+              <%= nomeDias[i] %>
+            </label>
+          <% } %>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── O QUE ENTRA NA BASE ── -->
+    <div class="bloco">
+      <h2><img src="/svg/lupa-320x320.svg" alt="">O que entra na base</h2>
+
+      <div class="form-grupo">
+        <label>Data de corte <span class="dica">(vazio = tudo)</span></label>
+        <input type="date" name="repat_data_minima" value="<%= cfg.repat_data_minima || '' %>" style="max-width:200px">
+        <p class="muted" style="font-size:.75rem;margin-top:3px">Ocorrência mais antiga que isso não entra nem é cobrada.</p>
+      </div>
+      <div class="form-grupo">
+        <label>Empresas <span class="dica">(uma por grupo, separadas por vírgula)</span></label>
+        <input type="text" name="repat_empresas" value="<%= cfg.repat_empresas || '' %>">
+      </div>
+      <div class="form-grupo">
+        <label>Clusters <span class="dica">(vazio = todos — este módulo é independente de cluster)</span></label>
+        <input type="text" name="repat_clusters_permitidos" value="<%= cfg.repat_clusters_permitidos || '' %>">
+        <p class="muted" style="font-size:.75rem;margin-top:3px">
+          Deixe vazio para cobrar a empresa em qualquer cidade/região. Preencha só se quiser
+          restringir a clusters específicos.
+        </p>
+      </div>
+    </div>
+
+    <!-- ── ORIGEM ── -->
+    <div class="bloco">
+      <h2><img src="/svg/vivo-site-cinza-centro-320x320.svg" alt="">Origem</h2>
+      <div class="form-grupo">
+        <label>URL da base (TBL_OCORRENCIA.TXT)</label>
+        <input type="text" name="repat_import_url" value="<%= cfg.repat_import_url || '' %>">
+      </div>
+      <div class="dados">
+        <div class="form-grupo">
+          <label>Importar a cada, no mínimo (min)</label>
+          <input type="number" name="repat_intervalo_minimo" min="1" value="<%= cfg.repat_intervalo_minimo || 10 %>">
+        </div>
+        <div class="form-grupo">
+          <label>no máximo (min)</label>
+          <input type="number" name="repat_intervalo_maximo" min="1" value="<%= cfg.repat_intervalo_maximo || 20 %>">
+        </div>
+      </div>
+    </div>
+
+    <button class="btn full" type="submit">Salvar configurações</button>
+  </form>
+</main>
+
+<%- include('../partials/bottomnav') %>
+<%- include('../partials/foot') %>

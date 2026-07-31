@@ -54,6 +54,12 @@ router.post('/reports-regional/importar',  admin.reportsRegionalImportarAgora);
 router.post('/reports-regional/silenciar', admin.reportsRegionalMarcarAvisadas);
 router.post('/reports-regional/testar',    admin.reportsRegionalTestar);
 
+// Reports de Atraso (módulo separado: tabela report_atraso, configs repat_*, só escalada)
+router.get('/reports-atraso',                   admin.reportsAtraso);
+router.post('/reports-atraso',                  admin.salvarReportsAtraso);
+router.post('/reports-atraso/importar',         admin.reportsAtrasoImportarAgora);
+router.post('/reports-atraso/testar/:empresa',  admin.reportsAtrasoTestar);
+
 // Analytics
 router.get('/analytics',          admin.analytics);
 router.get('/analytics/exportar', admin.exportarBase);

@@ -9,6 +9,7 @@
     "setup": "node database/setup.js",
     "setup:reports": "node database/setup-reports.js",
     "setup:regional": "node database/setup-regional.js",
+    "setup:atraso": "node database/setup-atraso.js",
     "import": "node services/runImport.js"
   },
   "dependencies": {
