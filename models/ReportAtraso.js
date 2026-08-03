@@ -128,6 +128,14 @@ const ReportAtraso = {
         ORDER BY data_ocorrencia ASC LIMIT 1`, [empresa]);
     return row || null;
   },
+
+  // Remove quem já fechou (saiu de ABERTO). Uma vez fechada, a linha não serve
+  // mais pra nada aqui — este módulo só cobra atraso de quem está ABERTO, não
+  // avisa fechamento, então não há motivo para guardar histórico de fechadas.
+  async limparFechadas() {
+    const [r] = await db.query(`DELETE FROM report_atraso WHERE status != 'ABERTO'`);
+    return r.affectedRows || 0;
+  },
 };
 
 module.exports = ReportAtraso;

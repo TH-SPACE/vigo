@@ -11,7 +11,7 @@ const Vistoria   = require('../models/Vistoria');
 const Foto       = require('../models/Foto');
 const Historico  = require('../models/Historico');
 const Auditoria  = require('../models/Auditoria');
-const { importarAgora, importarObservacoesAgora, importarReportsAgora, importarRegionalAgora, importarAtrasoAgora } = require('../services/scheduler');
+const { importarAgora, importarObservacoesAgora, importarReportsAgora, importarRegionalAgora, importarAtrasoAgora, limparAtrasoAgora, limparRegionalAgora, limparReportsAgora } = require('../services/scheduler');
 const { enviarResumoDiario } = require('../services/resumoDiario');
 const { enviarReport: enviarReportAbertos } = require('../services/reportAbertos');
 const { fetchComTimeout } = require('../services/net');
@@ -325,7 +325,8 @@ module.exports = {
                    'rep_empresas', 'rep_clusters_permitidos', 'rep_status_permitidos',
                    'rep_afetacao_minima', 'rep_data_minima',
                    'rep_escalada_faixa1_horas', 'rep_escalada_faixa1_intervalo',
-                   'rep_escalada_faixa2_horas', 'rep_escalada_faixa2_intervalo'];
+                   'rep_escalada_faixa2_horas', 'rep_escalada_faixa2_intervalo',
+                   'rep_limpeza_dias'];
     const dados = {};
     for (const c of texto) if (req.body[c] !== undefined) dados[c] = req.body[c];
 
@@ -334,6 +335,7 @@ module.exports = {
     dados.rep_escalada_ativa         = req.body.rep_escalada_ativa         ? '1' : '0';
     dados.rep_escalada_faixa1_ativa  = req.body.rep_escalada_faixa1_ativa  ? '1' : '0';
     dados.rep_escalada_faixa2_ativa  = req.body.rep_escalada_faixa2_ativa  ? '1' : '0';
+    dados.rep_limpeza_ativa          = req.body.rep_limpeza_ativa          ? '1' : '0';
 
     const diasArr = Array.isArray(req.body.rep_escalada_dias)
       ? req.body.rep_escalada_dias
@@ -375,6 +377,15 @@ module.exports = {
       flash(res, 'ok', `Importação concluída: ${r.resultado}.` +
         (r.notificadas ? ` ${r.notificadas} notificação(ões) enviada(s).` : ''));
     } catch (e) { flash(res, 'erro', 'Falha na importação: ' + e.message); }
+    res.redirect('/admin/reports-empresas');
+  },
+
+  async reportsLimparAgora(req, res) {
+    try {
+      const { removidas } = await limparReportsAgora();
+      await Auditoria.log(req, 'LIMPEZA REPORTS', `${removidas} removida(s)`);
+      flash(res, 'ok', `Limpeza concluída: ${removidas} ocorrência(s) fechada(s) removida(s).`);
+    } catch (e) { flash(res, 'erro', 'Falha na limpeza: ' + e.message); }
     res.redirect('/admin/reports-empresas');
   },
 
@@ -427,7 +438,8 @@ module.exports = {
                    'repreg_empresas', 'repreg_clusters_permitidos', 'repreg_status_permitidos',
                    'repreg_afetacao_minima', 'repreg_data_minima',
                    'repreg_escalada_faixa1_horas', 'repreg_escalada_faixa1_intervalo',
-                   'repreg_escalada_faixa2_horas', 'repreg_escalada_faixa2_intervalo'];
+                   'repreg_escalada_faixa2_horas', 'repreg_escalada_faixa2_intervalo',
+                   'repreg_limpeza_dias'];
     const dados = {};
     for (const c of texto) if (req.body[c] !== undefined) dados[c] = req.body[c];
 
@@ -436,6 +448,7 @@ module.exports = {
     dados.repreg_escalada_ativa         = req.body.repreg_escalada_ativa         ? '1' : '0';
     dados.repreg_escalada_faixa1_ativa  = req.body.repreg_escalada_faixa1_ativa  ? '1' : '0';
     dados.repreg_escalada_faixa2_ativa  = req.body.repreg_escalada_faixa2_ativa  ? '1' : '0';
+    dados.repreg_limpeza_ativa          = req.body.repreg_limpeza_ativa          ? '1' : '0';
 
     const diasArr = Array.isArray(req.body.repreg_escalada_dias)
       ? req.body.repreg_escalada_dias
@@ -464,6 +477,15 @@ module.exports = {
       flash(res, 'ok', `Importação concluída: ${r.resultado}.` +
         (r.notificadas ? ` ${r.notificadas} notificação(ões) enviada(s).` : ''));
     } catch (e) { flash(res, 'erro', 'Falha na importação: ' + e.message); }
+    res.redirect('/admin/reports-regional');
+  },
+
+  async reportsRegionalLimparAgora(req, res) {
+    try {
+      const { removidas } = await limparRegionalAgora();
+      await Auditoria.log(req, 'LIMPEZA REGIONAL', `${removidas} removida(s)`);
+      flash(res, 'ok', `Limpeza concluída: ${removidas} ocorrência(s) fechada(s) removida(s).`);
+    } catch (e) { flash(res, 'erro', 'Falha na limpeza: ' + e.message); }
     res.redirect('/admin/reports-regional');
   },
 
@@ -532,6 +554,7 @@ module.exports = {
     dados.repat_escalada_ativa         = req.body.repat_escalada_ativa         ? '1' : '0';
     dados.repat_escalada_faixa1_ativa  = req.body.repat_escalada_faixa1_ativa  ? '1' : '0';
     dados.repat_escalada_faixa2_ativa  = req.body.repat_escalada_faixa2_ativa  ? '1' : '0';
+    dados.repat_limpeza_ativa          = req.body.repat_limpeza_ativa          ? '1' : '0';
 
     const diasArr = Array.isArray(req.body.repat_escalada_dias)
       ? req.body.repat_escalada_dias
@@ -571,6 +594,15 @@ module.exports = {
       await Auditoria.log(req, 'IMPORTAÇÃO ATRASO', r.resultado);
       flash(res, 'ok', `Importação concluída: ${r.resultado}.`);
     } catch (e) { flash(res, 'erro', 'Falha na importação: ' + e.message); }
+    res.redirect('/admin/reports-atraso');
+  },
+
+  async reportsAtrasoLimparAgora(req, res) {
+    try {
+      const { removidas } = await limparAtrasoAgora();
+      await Auditoria.log(req, 'LIMPEZA ATRASO', `${removidas} removida(s)`);
+      flash(res, 'ok', `Limpeza concluída: ${removidas} ocorrência(s) fechada(s) removida(s).`);
+    } catch (e) { flash(res, 'erro', 'Falha na limpeza: ' + e.message); }
     res.redirect('/admin/reports-atraso');
   },
 

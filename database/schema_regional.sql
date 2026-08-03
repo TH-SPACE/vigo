@@ -81,4 +81,12 @@ INSERT IGNORE INTO config (chave, valor) VALUES
   -- Depois que este flag vira 1, os avisos passam a sair em tempo real.
   ('repreg_backfill_feito','0'),
   ('repreg_ultima_importacao',''),
-  ('repreg_ultima_importacao_resultado','');
+  ('repreg_ultima_importacao_resultado',''),
+
+  -- Limpeza: quem já fechou (saiu de ABERTO) não serve mais pra nada aqui.
+  -- Só espera o carimbo de aviso (notificado_fechado_em) para status
+  -- literalmente 'FECHADO' — ver nota em models/ReportRegional.js#limparFechadas.
+  -- Roda a cada N dias (repreg_limpeza_ultima_em guarda a última execução).
+  ('repreg_limpeza_ativa','1'),
+  ('repreg_limpeza_dias','7'),
+  ('repreg_limpeza_ultima_em','');

@@ -44,6 +44,7 @@ router.post('/whatsapp/resumo',          admin.whatsappResumoAgora);
 router.get('/reports-empresas',                   admin.reportsEmpresas);
 router.post('/reports-empresas',                  admin.salvarReportsEmpresas);
 router.post('/reports-empresas/importar',         admin.reportsImportarAgora);
+router.post('/reports-empresas/limpar',           admin.reportsLimparAgora);
 router.post('/reports-empresas/silenciar',        admin.reportsMarcarAvisadas);
 router.post('/reports-empresas/testar/:empresa',  admin.reportsTestar);
 
@@ -51,6 +52,7 @@ router.post('/reports-empresas/testar/:empresa',  admin.reportsTestar);
 router.get('/reports-regional',            admin.reportsRegional);
 router.post('/reports-regional',           admin.salvarReportsRegional);
 router.post('/reports-regional/importar',  admin.reportsRegionalImportarAgora);
+router.post('/reports-regional/limpar',    admin.reportsRegionalLimparAgora);
 router.post('/reports-regional/silenciar', admin.reportsRegionalMarcarAvisadas);
 router.post('/reports-regional/testar',    admin.reportsRegionalTestar);
 
@@ -58,6 +60,7 @@ router.post('/reports-regional/testar',    admin.reportsRegionalTestar);
 router.get('/reports-atraso',                   admin.reportsAtraso);
 router.post('/reports-atraso',                  admin.salvarReportsAtraso);
 router.post('/reports-atraso/importar',         admin.reportsAtrasoImportarAgora);
+router.post('/reports-atraso/limpar',           admin.reportsAtrasoLimparAgora);
 router.post('/reports-atraso/testar/:empresa',  admin.reportsAtrasoTestar);
 
 // Analytics

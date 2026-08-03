@@ -78,4 +78,11 @@ INSERT IGNORE INTO config (chave, valor) VALUES
   -- este flag vira 1, a escalada passa a cobrar normalmente.
   ('repat_backfill_feito','0'),
   ('repat_ultima_importacao',''),
-  ('repat_ultima_importacao_resultado','');
+  ('repat_ultima_importacao_resultado',''),
+
+  -- Limpeza: quem já fechou (saiu de ABERTO) não serve mais pra nada aqui —
+  -- este módulo só cobra atraso de quem está ABERTO. Roda a cada N dias
+  -- (repat_limpeza_ultima_em guarda a última execução).
+  ('repat_limpeza_ativa','1'),
+  ('repat_limpeza_dias','7'),
+  ('repat_limpeza_ultima_em','');

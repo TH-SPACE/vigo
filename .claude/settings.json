@@ -1,0 +1,9 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(node -c /home/user/vistoria_ocorrencias/controllers/adminController.js)",
+      "Bash(node -c /home/user/vistoria_ocorrencias/routes/admin.js)",
+      "Bash(node -c models/ReportRegional.js)"
+    ]
+  }
+}

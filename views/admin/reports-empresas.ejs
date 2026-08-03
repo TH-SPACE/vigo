@@ -14,6 +14,7 @@
     <div class="card-info" style="flex-wrap:wrap;gap:6px">
       <span>Base: <b><%= Number(totalBase).toLocaleString('pt-BR') %></b></span>
       <span>Última importação: <b><%= cfg.rep_ultima_importacao ? fmtData(cfg.rep_ultima_importacao) : 'nunca' %></b></span>
+      <span>Última limpeza: <b><%= cfg.rep_limpeza_ultima_em ? fmtData(cfg.rep_limpeza_ultima_em) : 'nunca' %></b></span>
       <span>Módulo: <b style="color:<%= String(cfg.rep_ativo)==='1' ? '#16a34a' : '#dc2626' %>">
         <%= String(cfg.rep_ativo)==='1' ? 'LIGADO' : 'DESLIGADO' %></b></span>
     </div>
@@ -249,6 +250,33 @@
           <input type="number" name="rep_intervalo_maximo" min="1" value="<%= cfg.rep_intervalo_maximo || 20 %>">
         </div>
       </div>
+    </div>
+
+    <!-- ── LIMPEZA ── -->
+    <div class="bloco">
+      <h2><img src="/svg/lupa-320x320.svg" alt="">Limpeza</h2>
+      <p class="muted" style="font-size:.78rem;margin-top:-4px;margin-bottom:10px">
+        Ocorrência fechada (saiu de ABERTO) não serve mais pra este módulo. A cada N dias,
+        remove da tabela quem estiver nessa condição.
+      </p>
+
+      <div class="form-grupo">
+        <label style="display:flex;align-items:center;gap:.5rem">
+          <input type="checkbox" name="rep_limpeza_ativa" value="1" style="width:auto"
+            <%= String(cfg.rep_limpeza_ativa ?? '1') === '1' ? 'checked' : '' %>>
+          <b>Limpeza automática ligada</b>
+        </label>
+      </div>
+      <div class="form-grupo">
+        <label>Limpar a cada (dias)</label>
+        <input type="number" name="rep_limpeza_dias" min="1" max="365"
+               value="<%= cfg.rep_limpeza_dias || 7 %>" style="max-width:120px">
+      </div>
+
+      <button class="btn sm" type="submit" style="margin-top:.5rem"
+              formaction="/admin/reports-empresas/limpar" formmethod="POST" formnovalidate>
+        Limpar agora
+      </button>
     </div>
 
     <button class="btn full" type="submit">Salvar configurações</button>

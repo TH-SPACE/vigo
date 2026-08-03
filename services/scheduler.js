@@ -11,14 +11,21 @@ const Auditoria = require('../models/Auditoria');
 const { verificarEnvio: verificarResumoDiario } = require('./resumoDiario');
 const { verificarEnvio: verificarReportAbertos } = require('./reportAbertos');
 const { importar: importarReports } = require('./importadorReports');
-const { verificarEscalada, processarNotificacoes } = require('./reportEmpresas');
+const {
+  verificarEscalada, processarNotificacoes,
+  agoraBrasilia: agoraBrasiliaEmpresas, paraDate: paraDateEmpresas,
+} = require('./reportEmpresas');
 const { importar: importarRegional } = require('./importadorRegional');
 const {
   verificarEscalada: verificarEscaladaRegional,
   processarNotificacoes: processarNotificacoesRegional,
+  agoraBrasilia: agoraBrasiliaRegional, paraDate: paraDateRegional,
 } = require('./reportRegional');
 const { importar: importarAtraso } = require('./importadorAtraso');
-const { verificarEscalada: verificarEscaladaAtraso } = require('./reportAtraso');
+const { verificarEscalada: verificarEscaladaAtraso, agoraBrasilia: agoraBrasiliaAtraso, paraDate: paraDateAtraso } = require('./reportAtraso');
+const ReportAtraso = require('../models/ReportAtraso');
+const ReportRegional = require('../models/ReportRegional');
+const ReportOcorrencia = require('../models/ReportOcorrencia');
 
 let timer = null;
 let rodando = false;
@@ -91,7 +98,31 @@ async function agendarProximo() {
 
 // ── Módulo Reports por Empresa ───────────────────────────────────────────────
 
+// Limpa quem já fechou (saiu de ABERTO), a cada N dias configurável
+// (rep_limpeza_dias, padrão 7) — mesmo desenho do módulo de Atraso (ver
+// limparAtrasoAntigas). A regra de quando cada linha pode sair é decidida em
+// ReportOcorrencia.limparFechadas().
+async function limparReportsAntigas() {
+  try {
+    const ativa = await Config.get('rep_limpeza_ativa', '1');
+    if (String(ativa) !== '1') return 0;
+
+    const dias = parseInt(await Config.get('rep_limpeza_dias', '7'), 10) || 7;
+    const ultima = paraDateEmpresas(await Config.get('rep_limpeza_ultima_em', ''));
+    if (ultima && (Date.now() - ultima.getTime()) / 86400000 < dias) return 0;
+
+    const n = await ReportOcorrencia.limparFechadas();
+    await Config.set('rep_limpeza_ultima_em', agoraBrasiliaEmpresas());
+    if (n) console.log(`[ReportEmpresas] ${n} ocorrência(s) fechada(s) removida(s).`);
+    return n;
+  } catch (e) {
+    console.error('[ReportEmpresas] Limpeza falhou:', e.message);
+    return 0;
+  }
+}
+
 async function cicloReports() {
+  await limparReportsAntigas();
   try {
     const ativo = await Config.get('rep_ativo', '0');
     if (String(ativo) === '1' && !rodandoReports) {
@@ -126,9 +157,41 @@ async function importarReportsAgora() {
   }
 }
 
+// Limpeza manual (botão da tela); roda na hora, mesmo com a limpeza automática
+// desligada ou o prazo não vencido. Também reseta o relógio.
+async function limparReportsAgora() {
+  const n = await ReportOcorrencia.limparFechadas();
+  await Config.set('rep_limpeza_ultima_em', agoraBrasiliaEmpresas());
+  return { removidas: n };
+}
+
 // ── Módulo Reports Regional ──────────────────────────────────────────────
 
+// Limpa quem já fechou (saiu de ABERTO), a cada N dias configurável
+// (repreg_limpeza_dias, padrão 7) — mesmo desenho do módulo de Atraso (ver
+// limparAtrasoAntigas). A regra de quando cada linha pode sair é decidida em
+// ReportRegional.limparFechadas().
+async function limparRegionalAntigas() {
+  try {
+    const ativa = await Config.get('repreg_limpeza_ativa', '1');
+    if (String(ativa) !== '1') return 0;
+
+    const dias = parseInt(await Config.get('repreg_limpeza_dias', '7'), 10) || 7;
+    const ultima = paraDateRegional(await Config.get('repreg_limpeza_ultima_em', ''));
+    if (ultima && (Date.now() - ultima.getTime()) / 86400000 < dias) return 0;
+
+    const n = await ReportRegional.limparFechadas();
+    await Config.set('repreg_limpeza_ultima_em', agoraBrasiliaRegional());
+    if (n) console.log(`[ReportRegional] ${n} ocorrência(s) fechada(s) removida(s).`);
+    return n;
+  } catch (e) {
+    console.error('[ReportRegional] Limpeza falhou:', e.message);
+    return 0;
+  }
+}
+
 async function cicloRegional() {
+  await limparRegionalAntigas();
   try {
     const ativo = await Config.get('repreg_ativo', '0');
     if (String(ativo) === '1' && !rodandoRegional) {
@@ -163,9 +226,41 @@ async function importarRegionalAgora() {
   }
 }
 
+// Limpeza manual (botão da tela); roda na hora, mesmo com a limpeza automática
+// desligada ou o prazo não vencido. Também reseta o relógio.
+async function limparRegionalAgora() {
+  const n = await ReportRegional.limparFechadas();
+  await Config.set('repreg_limpeza_ultima_em', agoraBrasiliaRegional());
+  return { removidas: n };
+}
+
 // ── Módulo Reports de Atraso ──────────────────────────────────────────────
 
+// Limpa quem já fechou (saiu de ABERTO), a cada N dias configurável
+// (repat_limpeza_dias, padrão 7) — não a cada ciclo de importação (esse roda
+// de 10 em 10min, cedo demais). `repat_limpeza_ultima_em` guarda quando rodou
+// pela última vez; só dispara de novo depois de vencido o prazo.
+async function limparAtrasoAntigas() {
+  try {
+    const ativa = await Config.get('repat_limpeza_ativa', '1');
+    if (String(ativa) !== '1') return 0;
+
+    const dias = parseInt(await Config.get('repat_limpeza_dias', '7'), 10) || 7;
+    const ultima = paraDateAtraso(await Config.get('repat_limpeza_ultima_em', ''));
+    if (ultima && (Date.now() - ultima.getTime()) / 86400000 < dias) return 0;
+
+    const n = await ReportAtraso.limparFechadas();
+    await Config.set('repat_limpeza_ultima_em', agoraBrasiliaAtraso());
+    if (n) console.log(`[ReportAtraso] ${n} ocorrência(s) fechada(s) removida(s).`);
+    return n;
+  } catch (e) {
+    console.error('[ReportAtraso] Limpeza falhou:', e.message);
+    return 0;
+  }
+}
+
 async function cicloAtraso() {
+  await limparAtrasoAntigas();
   try {
     const ativo = await Config.get('repat_ativo', '0');
     if (String(ativo) === '1' && !rodandoAtraso) {
@@ -198,6 +293,15 @@ async function importarAtrasoAgora() {
     rodandoAtraso = false;
     await agendarProximoAtraso();
   }
+}
+
+// Limpeza manual (botão da tela); roda na hora, mesmo com a limpeza automática
+// desligada ou o prazo dos 7 dias não vencido — é uma ação explícita do
+// usuário. Também reseta o relógio, pra não rodar nos 7 dias seguintes.
+async function limparAtrasoAgora() {
+  const n = await ReportAtraso.limparFechadas();
+  await Config.set('repat_limpeza_ultima_em', agoraBrasiliaAtraso());
+  return { removidas: n };
 }
 
 // Importação manual (botão do admin); reagenda o ciclo.
@@ -256,5 +360,6 @@ function iniciarScheduler() {
 
 module.exports = {
   iniciarScheduler, importarAgora, importarObservacoesAgora, minutosAleatorios,
-  importarReportsAgora, importarRegionalAgora, importarAtrasoAgora,
+  importarReportsAgora, importarRegionalAgora, importarAtrasoAgora, limparAtrasoAgora,
+  limparRegionalAgora, limparReportsAgora,
 };

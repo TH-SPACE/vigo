@@ -174,6 +174,21 @@ const ReportRegional = {
         ORDER BY data_ocorrencia DESC LIMIT 1`);
     return row || null;
   },
+
+  // Remove quem já fechou (saiu de ABERTO). Só espera o carimbo de aviso
+  // (notificado_fechado_em) para quem está literalmente 'FECHADO' — é o único
+  // status que processarNotificacoes() trata como aviso pendente
+  // (STATUS_NOTIFICAVEIS em reportRegional.js só reconhece ABERTO/FECHADO).
+  // Outros status terminais que a fonte usa (CANCELADO, IMPROCEDIDO, etc.)
+  // nunca geram aviso de fechamento nem ganham esse carimbo — esperar por ele
+  // pra essas linhas as deixaria presas na tabela para sempre.
+  async limparFechadas() {
+    const [r] = await db.query(
+      `DELETE FROM report_regional
+        WHERE status != 'ABERTO'
+          AND (status != 'FECHADO' OR notificado_fechado_em IS NOT NULL)`);
+    return r.affectedRows || 0;
+  },
 };
 
 module.exports = ReportRegional;
